@@ -156,7 +156,7 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 20 }}>
           <div>
-            <label style={labelStyle}>Date & Time (DD/MM/YY HH:MM)</label>
+            <label style={labelStyle}>Date & Time </label>
             <input type="text" value={form.date}
               onChange={e => inp("date", formatDateInput(e.target.value))}
               maxLength={14} style={{ ...inputStyle, fontFamily: "monospace" }} />
