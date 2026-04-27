@@ -4,8 +4,6 @@ import PropFirm       from "../modules/PropFirm";
 import ForwardOverview from "../modules/ForwardOverview";
 import TradeNotebook  from "../modules/TradeNotebook";
 import DataEntry      from "../modules/DataEntry";
-import Settings       from "../modules/Settings";
-
 // ─── ModuleContent ────────────────────────────────────────────────────────────
 // Single place to add/remove modules. To add a new module:
 //   1. Import it above.
