@@ -48,7 +48,7 @@ export const BACKGROUNDS = [
     }),
     render: (D) => (
       <div style={{
-        position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none",
+        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none"
         background: D.bg,
         backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px)",
         backgroundSize: "40px 40px",

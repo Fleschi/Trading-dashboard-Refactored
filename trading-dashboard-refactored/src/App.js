@@ -8,6 +8,7 @@ import NavIcon          from "./components/NavIcon";
 import ModuleContent    from "./components/ModuleContent";
 import Settings         from "./modules/Settings";
 import PageBackground   from "./components/PageBackground";
+
 const FONT = "'DM Sans', system-ui, sans-serif";
 
 export default function App() {
@@ -61,9 +62,10 @@ export default function App() {
   if (isMobile) {
     const mobileTabs = [SETTINGS_MODULE, ...modules];
     return (
-      <div style={{ minHeight: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column" }}>
+      <div style={{ minHeight: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column", position: "relative", zIndex: 1 }}>
         <GlobalStyles design={D} />
         <PageBackground design={D} />
+
         {/* Topbar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${D.border}`, background: `${D.sidebar}ee`, backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 5 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: D.text }}>{activeModule?.label}</div>
@@ -93,9 +95,10 @@ export default function App() {
 
   // ── Desktop layout ────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", color: D.text, fontFamily: FONT, display: "flex", position: "relative", zIndex: 1 }}>
       <GlobalStyles design={D} />
       <PageBackground design={D} />
+
       <Sidebar
         open={sidebarOpen} onToggle={() => setSidebarOpen(o => !o)}
         modules={modules} tab={tab} isForward={isForward}
@@ -104,7 +107,7 @@ export default function App() {
       />
 
       {/* Main panel */}
-      <div style={{ flex: 1, minWidth: 0, overflow: "auto" }}>
+      <div style={{ flex: 1, minWidth: 0, overflow: "auto", position: "relative", zIndex: 1 }}>
 
         {/* Topbar */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 28px", borderBottom: `1px solid ${D.border}`, background: `${D.sidebar}cc`, backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 5 }}>
