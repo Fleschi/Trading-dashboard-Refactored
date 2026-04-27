@@ -28,19 +28,27 @@ export const SETTINGS_MODULE = {
   icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
 };
 
+// ─── Backgrounds ─────────────────────────────────────────────────────────────
+// zIndex: -1 ensures backgrounds never overlap charts or interactive elements.
+
 export const BACKGROUNDS = [
   {
     id: "none",
     label: "Solid",
     preview: (bg) => ({ background: bg }),
-    render: (D) => null,
+    render: () => null,
   },
   {
     id: "grid-dark",
     label: "Grid",
-    preview: () => ({ background: "#0a0a0f", backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "40px 40px" }),
+    preview: () => ({
+      background: "#0a0a0f",
+      backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px)",
+      backgroundSize: "40px 40px",
+    }),
     render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+      <div style={{
+        position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none",
         background: D.bg,
         backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px)",
         backgroundSize: "40px 40px",
@@ -50,14 +58,21 @@ export const BACKGROUNDS = [
   {
     id: "grid-glow",
     label: "Grid + Glow",
-    preview: () => ({ background: "#0a0a0f", backgroundImage: "linear-gradient(rgba(129,140,248,0.06) 1px, transparent 1px), linear-gradient(to right, rgba(129,140,248,0.06) 1px, transparent 1px)", backgroundSize: "40px 40px" }),
+    preview: () => ({
+      background: "#0a0a0f",
+      backgroundImage: "linear-gradient(rgba(129,140,248,0.06) 1px, transparent 1px), linear-gradient(to right, rgba(129,140,248,0.06) 1px, transparent 1px)",
+      backgroundSize: "40px 40px",
+    }),
     render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
-        <div style={{ position: "absolute", inset: 0, background: D.bg,
+      <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none" }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          background: D.bg,
           backgroundImage: `linear-gradient(${D.purple}09 1px, transparent 1px), linear-gradient(to right, ${D.purple}09 1px, transparent 1px)`,
           backgroundSize: "40px 40px",
         }} />
-        <div style={{ position: "absolute", inset: 0,
+        <div style={{
+          position: "absolute", inset: 0,
           background: `radial-gradient(ellipse 80% 50% at 50% -20%, ${D.purple}22, transparent)`,
         }} />
       </div>
@@ -66,9 +81,14 @@ export const BACKGROUNDS = [
   {
     id: "dots",
     label: "Dots",
-    preview: () => ({ background: "#0a0a0f", backgroundImage: "radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)", backgroundSize: "24px 24px" }),
+    preview: () => ({
+      background: "#0a0a0f",
+      backgroundImage: "radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)",
+      backgroundSize: "24px 24px",
+    }),
     render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+      <div style={{
+        position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none",
         background: D.bg,
         backgroundImage: `radial-gradient(${D.blue}18 1px, transparent 1px)`,
         backgroundSize: "24px 24px",
@@ -78,9 +98,12 @@ export const BACKGROUNDS = [
   {
     id: "radial",
     label: "Radial",
-    preview: () => ({ background: "radial-gradient(circle at 70% 20%, #1a0a2e, #0a0a0f 60%)" }),
+    preview: () => ({
+      background: "radial-gradient(circle at 70% 20%, #1a0a2e, #0a0a0f 60%)",
+    }),
     render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+      <div style={{
+        position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none",
         background: `radial-gradient(circle 800px at 100% 200px, ${D.purple}28, transparent), radial-gradient(circle 600px at 0% 80%, ${D.blue}18, transparent), ${D.bg}`,
       }} />
     ),
@@ -90,9 +113,10 @@ export const BACKGROUNDS = [
     label: "Noise",
     preview: () => ({ background: "#0a0a0f" }),
     render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none" }}>
         <div style={{ position: "absolute", inset: 0, background: D.bg }} />
-        <div style={{ position: "absolute", inset: 0, opacity: 0.4,
+        <div style={{
+          position: "absolute", inset: 0, opacity: 0.4,
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
           backgroundSize: "200px 200px",
         }} />
@@ -103,8 +127,8 @@ export const BACKGROUNDS = [
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
-export const SIDEBAR_WIDTH   = 220;
-export const SIDEBAR_MOBILE  = 180;
-export const ICON_ONLY_WIDTH = 60;
-export const BOTTOM_NAV_H    = 56;
+export const SIDEBAR_WIDTH    = 220;
+export const SIDEBAR_MOBILE   = 180;
+export const ICON_ONLY_WIDTH  = 60;
+export const BOTTOM_NAV_H     = 56;
 export const MOBILE_BREAKPOINT = 768;
