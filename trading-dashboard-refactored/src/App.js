@@ -7,7 +7,7 @@ import Sidebar          from "./components/Sidebar";
 import NavIcon          from "./components/NavIcon";
 import ModuleContent    from "./components/ModuleContent";
 import Settings         from "./modules/Settings";
-
+import PageBackground   from "./components/PageBackground";
 const FONT = "'DM Sans', system-ui, sans-serif";
 
 export default function App() {
@@ -63,7 +63,7 @@ export default function App() {
     return (
       <div style={{ minHeight: "100vh", background: D.bg, color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column" }}>
         <GlobalStyles design={D} />
-
+        <PageBackground design={D} />
         {/* Topbar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${D.border}`, background: `${D.sidebar}ee`, backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 5 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: D.text }}>{activeModule?.label}</div>
@@ -95,7 +95,7 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: D.bg, color: D.text, fontFamily: FONT, display: "flex" }}>
       <GlobalStyles design={D} />
-
+      <PageBackground design={D} />
       <Sidebar
         open={sidebarOpen} onToggle={() => setSidebarOpen(o => !o)}
         modules={modules} tab={tab} isForward={isForward}

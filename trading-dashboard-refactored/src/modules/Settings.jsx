@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-
+import { BACKGROUNDS } from "../constants";
 const STORAGE_KEY = "trading_dashboard_design";
 
 const PRESETS = [
@@ -109,7 +109,31 @@ export default function Settings({ design, onChange }) {
           ))}
         </div>
       </div>
-
+      {/* Background Pattern */}
+      <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 16, padding: 24 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 18, color: D.text }}>Background Pattern</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {BACKGROUNDS.map(b => {
+            const isActive = (D.background || "none") === b.id;
+            return (
+              <button key={b.id} onClick={() => onChange({ ...D, background: b.id })}
+                style={{
+                  width: 80, height: 56, borderRadius: 10, cursor: "pointer", overflow: "hidden",
+                  border: `2px solid ${isActive ? D.blue : D.border}`,
+                  padding: 0, position: "relative",
+                  boxShadow: isActive ? `0 0 12px ${D.blue}40` : "none",
+                  transition: "all 0.15s",
+                }}>
+                <div style={{ position: "absolute", inset: 0, ...b.preview(D.bg) }} />
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 4,
+                  background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", letterSpacing: "0.04em" }}>{b.label}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <button onClick={reset}
         style={{ padding: "10px 20px", background: "transparent", border: `1px solid ${D.border}`, borderRadius: 10, color: D.textMuted, cursor: "pointer", fontSize: 13, alignSelf: "flex-start" }}>
         Reset to default
