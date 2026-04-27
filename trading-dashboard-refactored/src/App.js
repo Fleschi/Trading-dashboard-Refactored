@@ -61,7 +61,7 @@ export default function App() {
   if (isMobile) {
     const mobileTabs = [SETTINGS_MODULE, ...modules];
     return (
-      <div style={{ minHeight: "100vh", background: D.bg, color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column" }}>
+      <div style={{ minHeight: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column" }}>
         <GlobalStyles design={D} />
         <PageBackground design={D} />
         {/* Topbar */}
@@ -93,7 +93,7 @@ export default function App() {
 
   // ── Desktop layout ────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: D.bg, color: D.text, fontFamily: FONT, display: "flex" }}>
+    <div style={{ minHeight: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column" }}>
       <GlobalStyles design={D} />
       <PageBackground design={D} />
       <Sidebar
@@ -104,7 +104,7 @@ export default function App() {
       />
 
       {/* Main panel */}
-      <div style={{ flex: 1, minWidth: 0, overflow: "auto", background: D.bg }}>
+      <div style={{ flex: 1, minWidth: 0, overflow: "auto" }}>
 
         {/* Topbar */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 28px", borderBottom: `1px solid ${D.border}`, background: `${D.sidebar}cc`, backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 5 }}>
