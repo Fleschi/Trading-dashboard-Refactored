@@ -1,14 +1,6 @@
 import { useEffect } from "react";
-import { BACKGROUNDS } from "../constants";
+import { BACKGROUNDS } from "../constants.jsx";
 const STORAGE_KEY = "trading_dashboard_design";
-
-const PRESETS = [
-  { name: "Midnight",  bg: "#0a0a0f", card: "#111118", border: "#1e1e2a", sidebar: "#0d0d14", accent: "#818cf8" },
-  { name: "Obsidian",  bg: "#0a0a0a", card: "#141414", border: "#2a2a2a", sidebar: "#111111", accent: "#818cf8" },
-  { name: "Deep Sea",  bg: "#020c14", card: "#061a28", border: "#0e2d40", sidebar: "#041018", accent: "#38bdf8" },
-  { name: "Forest",    bg: "#040d08", card: "#081a10", border: "#0f2d1a", sidebar: "#051209", accent: "#34d399" },
-  { name: "Crimson",   bg: "#0f0508", card: "#1e0a10", border: "#3a0d18", sidebar: "#130508", accent: "#f43f5e" },
-];
 
 export const DEFAULT_DESIGN = {
   bg: "#0a0a0f", card: "#111118", border: "#1e1e2a", sidebar: "#0d0d14",

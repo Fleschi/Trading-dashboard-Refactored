@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTradeData, useIsMobile, useDesign, useNavigation } from "./hooks";
-import { BACK_MODULES, FWD_MODULES, SETTINGS_MODULE, BOTTOM_NAV_H } from "./constants";
+import { BACK_MODULES, FWD_MODULES, SETTINGS_MODULE, BOTTOM_NAV_H } from "./constants.jsx";
 
 import { GlobalStyles } from "./components/GlobalStyles";
 import Sidebar          from "./components/Sidebar";

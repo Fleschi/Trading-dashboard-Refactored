@@ -1,5 +1,5 @@
 import NavIcon from "./NavIcon";
-import { SETTINGS_MODULE, SIDEBAR_WIDTH, ICON_ONLY_WIDTH } from "../constants";
+import { SETTINGS_MODULE, SIDEBAR_WIDTH, ICON_ONLY_WIDTH } from "../constants.jsx";
 
 export default function Sidebar({
   open, onToggle,

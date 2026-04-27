@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { calcStats } from "./utils/calculations";
 import { loadTrades, loadForwardTrades } from "./utils/supabase";
 import { loadDesign } from "./modules/Settings";
-import { DEFAULT_DESIGN, MOBILE_BREAKPOINT } from "./constants";
+import { DEFAULT_DESIGN, MOBILE_BREAKPOINT } from "./constants.jsx";
 
 // ─── useTradeData ─────────────────────────────────────────────────────────────
 // Loads backtesting + forward trades from Supabase on mount.
