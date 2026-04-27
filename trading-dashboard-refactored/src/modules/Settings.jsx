@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { BACKGROUNDS } from "../constants.jsx";
+
 const STORAGE_KEY = "trading_dashboard_design";
 
 export const DEFAULT_DESIGN = {
@@ -7,6 +8,7 @@ export const DEFAULT_DESIGN = {
   green: "#10e8a0", red: "#ff4d6d", blue: "#818cf8",
   purple: "#a78bfa", yellow: "#fbbf24",
   text: "#f1f1f3", textMuted: "#52525b",
+  background: "none",
 };
 
 export function loadDesign() {
@@ -29,28 +31,34 @@ export default function Settings({ design, onChange }) {
   const inp = { padding: "7px 12px", background: D.bg, border: `1px solid ${D.border}`, borderRadius: 8, color: D.text, fontSize: 13, fontFamily: "monospace", width: "100%", outline: "none" };
   const lbl = { fontSize: 11, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 5, fontWeight: 600 };
 
-  const applyPreset = (p) => {
-    onChange({ ...D, bg: p.bg, card: p.card, border: p.border, sidebar: p.sidebar, blue: p.accent, purple: p.accent });
-  };
-
   const reset = () => { onChange(DEFAULT_DESIGN); saveDesign(DEFAULT_DESIGN); };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 600 }}>
 
-      {/* Presets */}
+      {/* Background Pattern */}
       <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 16, padding: 24 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 18, color: D.text }}>Theme Presets</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 18, color: D.text }}>Background Pattern</div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {PRESETS.map(p => (
-            <button key={p.name} onClick={() => applyPreset(p)}
-              style={{ padding: "10px 16px", borderRadius: 10, border: `1px solid ${D.bg === p.bg ? p.accent : D.border}`, background: p.bg, cursor: "pointer", transition: "all 0.15s", boxShadow: D.bg === p.bg ? `0 0 12px ${p.accent}40` : "none" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 12, height: 12, borderRadius: "50%", background: p.accent }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: D.bg === p.bg ? p.accent : "#9ca3af" }}>{p.name}</span>
-              </div>
-            </button>
-          ))}
+          {BACKGROUNDS.map(b => {
+            const isActive = (D.background || "none") === b.id;
+            return (
+              <button key={b.id} onClick={() => onChange({ ...D, background: b.id })}
+                style={{
+                  width: 80, height: 56, borderRadius: 10, cursor: "pointer", overflow: "hidden",
+                  border: `2px solid ${isActive ? D.blue : D.border}`,
+                  padding: 0, position: "relative",
+                  boxShadow: isActive ? `0 0 12px ${D.blue}40` : "none",
+                  transition: "all 0.15s",
+                }}>
+                <div style={{ position: "absolute", inset: 0, ...b.preview(D.bg) }} />
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 4,
+                  background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", letterSpacing: "0.04em" }}>{b.label}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -64,8 +72,8 @@ export default function Settings({ design, onChange }) {
             ["Border",     "border"],
             ["Sidebar",    "sidebar"],
             ["Accent",     "blue"],
-            ["Text",       "text"],       // 1.12: text color
-            ["Text Muted", "textMuted"],  // 1.12: muted text color
+            ["Text",       "text"],
+            ["Text Muted", "textMuted"],
           ].map(([label, key]) => (
             <div key={key}>
               <label style={lbl}>{label}</label>
@@ -101,31 +109,7 @@ export default function Settings({ design, onChange }) {
           ))}
         </div>
       </div>
-      {/* Background Pattern */}
-      <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 16, padding: 24 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 18, color: D.text }}>Background Pattern</div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {BACKGROUNDS.map(b => {
-            const isActive = (D.background || "none") === b.id;
-            return (
-              <button key={b.id} onClick={() => onChange({ ...D, background: b.id })}
-                style={{
-                  width: 80, height: 56, borderRadius: 10, cursor: "pointer", overflow: "hidden",
-                  border: `2px solid ${isActive ? D.blue : D.border}`,
-                  padding: 0, position: "relative",
-                  boxShadow: isActive ? `0 0 12px ${D.blue}40` : "none",
-                  transition: "all 0.15s",
-                }}>
-                <div style={{ position: "absolute", inset: 0, ...b.preview(D.bg) }} />
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 4,
-                  background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
-                  <span style={{ fontSize: 9, fontWeight: 600, color: "#fff", letterSpacing: "0.04em" }}>{b.label}</span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+
       <button onClick={reset}
         style={{ padding: "10px 20px", background: "transparent", border: `1px solid ${D.border}`, borderRadius: 10, color: D.textMuted, cursor: "pointer", fontSize: 13, alignSelf: "flex-start" }}>
         Reset to default
