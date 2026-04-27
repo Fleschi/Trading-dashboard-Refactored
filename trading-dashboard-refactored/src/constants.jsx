@@ -29,7 +29,6 @@ export const SETTINGS_MODULE = {
 };
 
 // ─── Backgrounds ─────────────────────────────────────────────────────────────
-// zIndex: -1 ensures backgrounds never overlap charts or interactive elements.
 
 export const BACKGROUNDS = [
   {
@@ -48,7 +47,7 @@ export const BACKGROUNDS = [
     }),
     render: (D) => (
       <div style={{
-        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none"
+        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
         background: D.bg,
         backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px)",
         backgroundSize: "40px 40px",
@@ -64,7 +63,7 @@ export const BACKGROUNDS = [
       backgroundSize: "40px 40px",
     }),
     render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none" }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
         <div style={{
           position: "absolute", inset: 0,
           background: D.bg,
@@ -88,7 +87,7 @@ export const BACKGROUNDS = [
     }),
     render: (D) => (
       <div style={{
-        position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none",
+        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
         background: D.bg,
         backgroundImage: `radial-gradient(${D.blue}18 1px, transparent 1px)`,
         backgroundSize: "24px 24px",
@@ -103,7 +102,7 @@ export const BACKGROUNDS = [
     }),
     render: (D) => (
       <div style={{
-        position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none",
+        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
         background: `radial-gradient(circle 800px at 100% 200px, ${D.purple}28, transparent), radial-gradient(circle 600px at 0% 80%, ${D.blue}18, transparent), ${D.bg}`,
       }} />
     ),
@@ -113,7 +112,7 @@ export const BACKGROUNDS = [
     label: "Noise",
     preview: () => ({ background: "#0a0a0f" }),
     render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none" }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
         <div style={{ position: "absolute", inset: 0, background: D.bg }} />
         <div style={{
           position: "absolute", inset: 0, opacity: 0.4,
@@ -127,8 +126,8 @@ export const BACKGROUNDS = [
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
-export const SIDEBAR_WIDTH    = 220;
-export const SIDEBAR_MOBILE   = 180;
-export const ICON_ONLY_WIDTH  = 60;
-export const BOTTOM_NAV_H     = 56;
+export const SIDEBAR_WIDTH     = 220;
+export const SIDEBAR_MOBILE    = 180;
+export const ICON_ONLY_WIDTH   = 60;
+export const BOTTOM_NAV_H      = 56;
 export const MOBILE_BREAKPOINT = 768;
