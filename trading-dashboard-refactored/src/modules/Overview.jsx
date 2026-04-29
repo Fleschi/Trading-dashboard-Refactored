@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { C, StatCard, GlowCard } from "../utils/ui";
-import { fmt, fmtPct } from "../utils/calculations";
+import { fmt } from "../utils/calculations";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const BASE_ACCOUNT = 50000;
