@@ -216,27 +216,6 @@ export default function Overview({ stats, design }) {
           ))}
         </div>
       </GlowCard>
-
-      {Object.keys(stats.assetMap || {}).length > 1 && (
-        <GlowCard design={D} style={{ padding: "16px 24px" }}>
-          <div style={{ fontSize: 11, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 14, fontWeight: 500 }}>Asset Breakdown</div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            {Object.entries(stats.assetMap).map(([asset, data]) => {
-              const total = data.wins + data.losses + data.bes;
-              const wr = (data.wins + data.losses) > 0 ? data.wins / (data.wins + data.losses) : 0;
-              return (
-                <div key={asset} style={{ background: D.bg, border: `1px solid ${D.border}`, borderRadius: 8, padding: "12px 16px", minWidth: 110 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: D.text, marginBottom: 6 }}>{asset}</div>
-                  <div style={{ fontSize: 11, color: D.textMuted, marginBottom: 2 }}>WR <span style={{ color: D.text, fontWeight: 600 }}>{fmtPct(wr)}</span></div>
-                  <div style={{ fontSize: 12, color: data.pnl >= 0 ? D.green : D.red, fontWeight: 600 }}>{fmt(data.pnl)}</div>
-                  <div style={{ fontSize: 10, color: D.textMuted, marginTop: 2 }}>{total} trades</div>
-                </div>
-              );
-            })}
-          </div>
-        </GlowCard>
-      )}
-
       <MiniEquity stats={stats} D={D} />
       <CalendarView trades={stats.rawTrades || []} D={D} />
     </div>
