@@ -1,15 +1,69 @@
-import { useState } from "react";
-import { C, StatCard, GlowCard } from "../utils/ui";
+import { GlowCard, StatCard } from "../utils/ui";
 import { fmt } from "../utils/calculations";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { useState } from "react";
 
-const BASE_ACCOUNT = 50000;
+// ─── Equity Curve ─────────────────────────────────────────────────────────────
+
+function EquityCurve({ stats, D }) {
+  if (!stats?.equityCurve) return null;
+
+  const chartData = [
+    { index: 0, equity: 0 },
+    ...(stats.equityCurve || []).map(p => ({ ...p })),
+  ];
+
+  const equities  = chartData.map(d => d.equity);
+  const minEq     = Math.min(...equities);
+  const maxEq     = Math.max(...equities);
+  const pad       = (maxEq - minEq) * 0.1 || 500;
+  const yMin      = Math.floor((minEq - pad) / 500) * 500;
+  const yMax      = Math.ceil((maxEq + pad) / 500) * 500;
+  const totalPnl  = equities[equities.length - 1];
+  const accent    = totalPnl >= 0 ? D.green : D.red;
+
+  const CustomTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    const d = payload[0].payload;
+    return (
+      <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 12 }}>
+        <div style={{ color: D.textMuted, marginBottom: 2 }}>Trade #{d.index}</div>
+        <div style={{ color: accent, fontWeight: 600 }}>{d.equity >= 0 ? "+" : ""}{fmt(d.equity)}</div>
+      </div>
+    );
+  };
+
+  return (
+    <GlowCard design={D} style={{ padding: 20, flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 11, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12, fontWeight: 500 }}>Equity Curve</div>
+      <ResponsiveContainer width="100%" height={220}>
+        <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor={accent} stopOpacity={0.15} />
+              <stop offset="95%" stopColor={accent} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke={D.border} />
+          <XAxis dataKey="index" tick={false} axisLine={false} tickLine={false} />
+          <YAxis domain={[yMin, yMax]} tick={{ fontSize: 10, fill: D.textMuted }} axisLine={false} tickLine={false}
+            tickFormatter={v => `$${(v/1000).toFixed(0)}k`} width={46} />
+          <Tooltip content={<CustomTooltip />} />
+          <ReferenceLine y={0} stroke={D.border} strokeDasharray="4 4" />
+          <Area type="monotone" dataKey="equity" stroke={accent} strokeWidth={2}
+            fill="url(#eqGrad)" dot={false} isAnimationActive={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </GlowCard>
+  );
+}
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
 
 function CalendarView({ trades, D }) {
   const [viewDate, setViewDate] = useState(() => {
-    if (!trades || trades.length === 0) return new Date();
-    const sorted = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
-    return new Date(sorted[0].date);
+    if (!trades?.length) return new Date();
+    return new Date([...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0].date);
   });
 
   const year = viewDate.getFullYear();
@@ -25,8 +79,7 @@ function CalendarView({ trades, D }) {
     if (d.getFullYear() === year && d.getMonth() === month) {
       const key = d.getDate();
       if (!byDay[key]) byDay[key] = { pnl: 0, trades: 0, wins: 0, losses: 0 };
-      byDay[key].pnl += t.pnl;
-      byDay[key].trades++;
+      byDay[key].pnl += t.pnl; byDay[key].trades++;
       if (t.pnl > 0) byDay[key].wins++;
       if (t.pnl < 0) byDay[key].losses++;
     }
@@ -42,7 +95,7 @@ function CalendarView({ trades, D }) {
 
   return (
     <GlowCard design={D} style={{ padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: D.text }}>{monthName}</div>
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={() => setViewDate(new Date(year, month - 1, 1))} style={{ padding: "4px 10px", background: "transparent", border: `1px solid ${D.border}`, borderRadius: 6, color: D.textMuted, cursor: "pointer", fontSize: 13 }}>←</button>
@@ -92,116 +145,58 @@ function CalendarView({ trades, D }) {
   );
 }
 
-// 1.2: Vereinfachte Version - Fixiert auf 50k
-function MiniEquity({ stats, D }) {
-  // 1. State und Input-Logik entfernt, Account fest auf 50000
-  const accountSize = 50000;
+// ─── Overview ─────────────────────────────────────────────────────────────────
 
-  if (!stats || !stats.equityCurve) return null;
-
-  // 2. Skalierung entfernt (scale = 1), da wir direkt den 50k Basis-Account zeigen
-  const chartData = [
-    { index: 0, equity: accountSize },
-    ...(stats.equityCurve || []).map(p => ({
-      ...p,
-      // Wir nehmen an, dass stats.equityCurve bereits auf den Basis-Account bezogen ist
-      equity: parseFloat((accountSize + p.equity).toFixed(2)),
-      pnl:    parseFloat((p.pnl).toFixed(2)),
-    })),
-  ];
-
-  const equities    = chartData.map(d => d.equity);
-  const minEq       = Math.min(...equities);
-  const maxEq       = Math.max(...equities);
-  const yMin        = Math.floor((minEq - 500) / 1000) * 1000;
-  const yMax        = Math.ceil((maxEq + 500) / 1000) * 1000;
-  const finalEquity = chartData[chartData.length - 1]?.equity ?? accountSize;
-  const totalPnl    = finalEquity - accountSize;
-  const accentColor = totalPnl >= 0 ? D.green : D.red;
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (!active || !payload?.length) return null;
-    const d = payload[0].payload;
-    return (
-      <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 8, padding: "10px 14px", fontSize: 12 }}>
-        <div style={{ color: D.textMuted, marginBottom: 3 }}>Trade #{d.index}</div>
-        <div style={{ color: accentColor, fontWeight: 600 }}>${d.equity.toLocaleString()}</div>
-        {d.index > 0 && <div style={{ color: d.pnl >= 0 ? D.green : D.red, fontSize: 11, marginTop: 2 }}>{d.pnl >= 0 ? "+" : ""}${Math.abs(d.pnl).toFixed(0)}</div>}
-      </div>
-    );
-  };
-
-  return (
-    <GlowCard design={D} style={{ padding: 24 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        {/* 3. Das gesamte Eingabefeld-Div wurde hier entfernt */}
-        <div style={{ display: "flex", gap: 20, marginLeft: "auto" }}>
-          {[["Start", `$${accountSize.toLocaleString()}`, D.text], ["Final", `$${finalEquity.toLocaleString()}`, accentColor], ["PnL", `${totalPnl >= 0 ? "+" : ""}$${Math.abs(totalPnl).toFixed(0)}`, accentColor]].map(([lbl, val, col]) => (
-            <div key={lbl} style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 10, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{lbl}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: col }}>{val}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <ResponsiveContainer width="100%" height={260}>
-        <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={accentColor} stopOpacity={0.15} />
-              <stop offset="95%" stopColor={accentColor} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke={D.border} />
-          <XAxis dataKey="index" tick={false} axisLine={false} tickLine={false} />
-          <YAxis domain={[yMin, yMax]} tick={{ fontSize: 10, fill: D.textMuted }} axisLine={false} tickLine={false}
-            tickFormatter={v => `$${(v/1000).toFixed(0)}k`} width={52} />
-          <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine y={accountSize} stroke={D.border} strokeDasharray="4 4" />
-          <Area type="monotone" dataKey="equity" stroke={accentColor} strokeWidth={2}
-            fill="url(#equityGrad)" dot={false} isAnimationActive={false} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </GlowCard>
-  );
-}
-
-export default function Overview({ stats, design }) {
-  const D = design || C;
-
+export default function Overview({ stats, design: D }) {
   if (!stats) return (
     <GlowCard design={D} style={{ padding: 40, textAlign: "center", color: D.textMuted }}>
       No trades yet. Add trades in the Data tab.
     </GlowCard>
   );
 
-  const cards = [
-    { label: "Total PnL",     value: fmt(stats.totalPnl),    color: stats.totalPnl >= 0 ? D.green : D.red},
+  const statItems = [
+    { label: "Total PnL",     value: fmt(stats.totalPnl),    color: stats.totalPnl >= 0 ? D.green : D.red },
     { label: "Win Rate",      value: stats.winRate > 0 ? `${(stats.winRate * 100).toFixed(0)}%` : "—", color: D.text },
     { label: "Avg RR",        value: stats.avgRR > 0 ? `${stats.avgRR.toFixed(2)}R` : "—", color: D.text },
     { label: "Trades / Week", value: stats.avgTradesPerWeek > 0 ? stats.avgTradesPerWeek.toFixed(1) : "—", color: D.text },
-    { label: "Expectancy",    value: fmt(stats.expectancy),  color: stats.expectancy >= 0 ? D.green : D.red},
-    { label: "Max Drawdown",  value: fmt(stats.mdd),         color: D.red},
+    { label: "Expectancy",    value: fmt(stats.expectancy),  color: stats.expectancy >= 0 ? D.green : D.red },
+    { label: "Max Drawdown",  value: fmt(stats.mdd),         color: D.red },
+  ];
+
+  const streakItems = [
+    ["Wins",        stats.wins,                      D.green],
+    ["Losses",      stats.losses,                    D.red],
+    ["Break-even",  stats.bes,                       D.yellow],
+    ["Avg Win",     fmt(stats.avgWin),               D.green],
+    ["Avg Loss",    `-$${stats.avgLoss.toFixed(0)}`, D.red],
+    ["Win Streak",  stats.maxWinStreak,              D.green],
+    ["Loss Streak", stats.maxLossStreak,             D.red],
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 12 }}>
-        {cards.map(c => <StatCard key={c.label} label={c.label} value={c.value} color={c.color} trend={c.trend} design={D} />)}
+      {/* Stats + Equity side by side */}
+      <div style={{ display: "flex", gap: 16, alignItems: "stretch" }}>
+
+        {/* Stat cards column */}
+        <GlowCard design={D} style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12, minWidth: 220, flexShrink: 0 }}>
+          {statItems.map(c => (
+            <div key={c.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${D.border}` }}>
+              <div style={{ fontSize: 11, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 500 }}>{c.label}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: c.color }}>{c.value}</div>
+            </div>
+          ))}
+        </GlowCard>
+
+        {/* Equity curve */}
+        <EquityCurve stats={stats} D={D} />
       </div>
 
+      {/* Streak bar */}
       <GlowCard design={D} style={{ padding: "16px 24px" }}>
         <div style={{ display: "flex", gap: 0, flexWrap: "wrap" }}>
-          {[
-            ["Wins",        stats.wins,                      D.green],
-            ["Losses",      stats.losses,                    D.red],
-            ["Break-even",  stats.bes,                       D.yellow],
-            ["Avg Win",     fmt(stats.avgWin),               D.green],
-            ["Avg Loss",    `-$${stats.avgLoss.toFixed(0)}`, D.red],
-            ["Win Streak",  stats.maxWinStreak,              D.green],
-            ["Loss Streak", stats.maxLossStreak,             D.red],
-          ].map(([label, value, color], i, arr) => (
+          {streakItems.map(([label, value, color], i, arr) => (
             <div key={label} style={{ flex: "1 1 auto", padding: "8px 20px", borderRight: i < arr.length - 1 ? `1px solid ${D.border}` : "none", minWidth: 80 }}>
               <div style={{ fontSize: 10, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5, fontWeight: 500 }}>{label}</div>
               <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>
@@ -209,7 +204,7 @@ export default function Overview({ stats, design }) {
           ))}
         </div>
       </GlowCard>
-      <MiniEquity stats={stats} D={D} />
+
       <CalendarView trades={stats.rawTrades || []} D={D} />
     </div>
   );
