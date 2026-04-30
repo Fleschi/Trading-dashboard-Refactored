@@ -20,7 +20,6 @@ export default function App() {
   const D          = design;
   const modules    = isForward ? FWD_MODULES : BACK_MODULES;
   const modeColor  = isForward ? D.green : D.blue;
-  const tradeCount = isForward ? fwdTrades.length : backTrades.length;
 
   const goToData = () => setTab(isForward ? "fwd-data" : "data");
 
@@ -86,14 +85,12 @@ export default function App() {
   }
 
   // ── Desktop ───────────────────────────────────────────────────────────────
-  const allTabs = [...modules, SETTINGS_MODULE];
-
   return (
     <div style={{ minHeight: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column", position: "relative", zIndex: 1 }}>
       <GlobalStyles design={D} />
       <PageBackground design={D} />
 
-      {/* Floating top nav — no background, no border, centered */}
+      {/* Floating top nav */}
       <div
         onMouseEnter={() => setNavHovered(true)}
         onMouseLeave={() => setNavHovered(false)}
@@ -101,11 +98,8 @@ export default function App() {
           position: "sticky", top: 0, zIndex: 20,
           display: "flex", alignItems: "center", justifyContent: "center",
           padding: "12px 24px",
-          pointerEvents: "all",
-          // No background, no border — floats above content
         }}
       >
-        {/* Pill group */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 
           {/* Mode toggle */}
@@ -113,66 +107,23 @@ export default function App() {
 
           <div style={{ width: 1, height: 18, background: D.border, margin: "0 6px", opacity: 0.6 }} />
 
-          {/* Module tabs */}
-          {allTabs.map(m => {
-            const isActive = m.id === "settings"
-              ? globalTab === "settings"
-              : (globalTab !== "settings" && tab === m.id);
-
-            return (
-              <button
-                key={m.id}
-                onClick={() => setTab(m.id)}
-                title={m.label}
-                style={{
-                  display: "flex", alignItems: "center",
-                  gap: navHovered ? 6 : 0,
-                  // Circle → pill transition
-                  width: navHovered ? "auto" : 36,
-                  height: 36,
-                  padding: navHovered ? "0 14px" : "0",
-                  justifyContent: "center",
-                  borderRadius: 999, // always pill/circle shaped
-                  border: `1px solid ${isActive ? D.blue + "60" : D.border}`,
-                  background: isActive ? `${D.blue}18` : `${D.card}cc`,
-                  backdropFilter: "blur(12px)",
-                  cursor: "pointer",
-                  color: isActive ? D.blue : D.textMuted,
-                  fontSize: 12, fontWeight: isActive ? 600 : 400,
-                  transition: "all 0.22s cubic-bezier(0.4,0,0.2,1)",
-                  overflow: "hidden",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                  boxShadow: isActive
-                    ? `0 0 0 1px ${D.blue}20, 0 2px 8px rgba(0,0,0,0.12)`
-                    : "0 2px 8px rgba(0,0,0,0.08)",
-                }}
-              >
-                <NavIcon path={m.icon} />
-                <span style={{
-                  maxWidth: navHovered ? 80 : 0,
-                  opacity: navHovered ? 1 : 0,
-                  overflow: "hidden",
-                  transition: "max-width 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease",
-                  display: "inline-block",
-                }}>
-                  {m.label}
-                </span>
-              </button>
-            );
+          {/* Module tabs — left group */}
+          {modules.map(m => {
+            const isActive = globalTab !== "settings" && tab === m.id;
+            return <NavTab key={m.id} m={m} isActive={isActive} navHovered={navHovered} D={D} onClick={() => setTab(m.id)} />;
           })}
 
           <div style={{ width: 1, height: 18, background: D.border, margin: "0 6px", opacity: 0.6 }} />
 
-          {/* Trade count pill */}
-          <div style={{
-            height: 36, padding: "0 12px", borderRadius: 999,
-            border: `1px solid ${D.border}`, background: `${D.card}cc`,
-            backdropFilter: "blur(12px)", display: "flex", alignItems: "center",
-            fontSize: 11, color: D.textMuted, whiteSpace: "nowrap",
-          }}>
-            {tradeCount} trades
-          </div>
+          {/* Settings — right group */}
+          <NavTab
+            m={SETTINGS_MODULE}
+            isActive={globalTab === "settings"}
+            navHovered={navHovered}
+            D={D}
+            onClick={() => setTab("settings")}
+          />
+
         </div>
       </div>
 
@@ -185,6 +136,45 @@ export default function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── NavTab ───────────────────────────────────────────────────────────────────
+
+function NavTab({ m, isActive, navHovered, D, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      title={m.label}
+      style={{
+        display: "flex", alignItems: "center",
+        gap: 6,
+        width: navHovered ? "auto" : 36,
+        height: 36,
+        padding: navHovered ? "0 14px" : "0",
+        justifyContent: "center",
+        borderRadius: 999,
+        border: `1px solid ${isActive ? D.blue + "60" : D.border}`,
+        background: isActive ? `${D.blue}18` : `${D.card}cc`,
+        backdropFilter: "blur(12px)",
+        cursor: "pointer",
+        color: isActive ? D.blue : D.textMuted,
+        fontSize: 12, fontWeight: isActive ? 600 : 400,
+        // No width transition — eliminates shake on leave
+        transition: "background 0.2s, border-color 0.2s, color 0.2s, padding 0.22s cubic-bezier(0.4,0,0.2,1)",
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+        boxShadow: isActive
+          ? `0 0 0 1px ${D.blue}20, 0 2px 8px rgba(0,0,0,0.12)`
+          : "0 2px 8px rgba(0,0,0,0.08)",
+      }}
+    >
+      <NavIcon path={m.icon} />
+      {navHovered && (
+        <span style={{ fontSize: 12 }}>{m.label}</span>
+      )}
+    </button>
   );
 }
 
