@@ -509,9 +509,6 @@ export default function PropFirm({ stats, design }) {
         {/* Right: Results */}
         {r && rawTrades.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-
-
-
             <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 18 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: D.blue, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>Evaluation</div>
               {[

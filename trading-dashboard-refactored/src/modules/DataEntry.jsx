@@ -162,11 +162,11 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
               maxLength={14} style={{ ...inputStyle, fontFamily: "monospace" }} />
           </div>
           <div>
-            <label style={labelStyle}>Risk-Reward (R)</label>
+            <label style={labelStyle}>Risk-Reward </label>
             <input type="number" step="0.1" value={form.rr} onChange={e => inp("rr", e.target.value)} style={inputStyle} />
           </div>
           <div>
-            <label style={labelStyle}>PnL ($)</label>
+            <label style={labelStyle}>PnL </label>
             <input type="number" value={form.pnl} onChange={e => inp("pnl", e.target.value)}
               style={{ ...inputStyle, borderColor: form.pnl !== "" ? (parseFloat(form.pnl) > 0 ? D.green : parseFloat(form.pnl) < 0 ? D.red : D.yellow) : D.border }} />
           </div>
