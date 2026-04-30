@@ -8,7 +8,8 @@ import ModuleContent    from "./components/ModuleContent";
 import Settings         from "./modules/Settings";
 import PageBackground   from "./components/PageBackground";
 
-const FONT = "'DM Sans', system-ui, sans-serif";
+const FONT      = "'DM Sans', system-ui, sans-serif";
+const NAV_H     = 60; // px — height of the sticky top nav
 
 export default function App() {
   const { backTrades, setBackTrades, fwdTrades, setFwdTrades, backStats, loading, error } = useTradeData();
@@ -17,9 +18,9 @@ export default function App() {
   const isMobile = useIsMobile();
   const { mode, isForward, tab, setTab, switchMode, globalTab } = useNavigation();
 
-  const D          = design;
-  const modules    = isForward ? FWD_MODULES : BACK_MODULES;
-  const modeColor  = isForward ? D.green : D.blue;
+  const D         = design;
+  const modules   = isForward ? FWD_MODULES : BACK_MODULES;
+  const modeColor = isForward ? D.green : D.blue;
 
   const goToData = () => setTab(isForward ? "fwd-data" : "data");
 
@@ -54,22 +55,22 @@ export default function App() {
   if (isMobile) {
     const mobileTabs = [SETTINGS_MODULE, ...modules];
     return (
-      <div style={{ minHeight: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column", position: "relative", zIndex: 1 }}>
+      <div style={{ height: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column", position: "relative", zIndex: 1, overflow: "hidden" }}>
         <GlobalStyles design={D} />
         <PageBackground design={D} />
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${D.border}`, background: `${D.sidebar}ee`, backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 5 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${D.border}`, background: `${D.sidebar}ee`, backdropFilter: "blur(12px)", flexShrink: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: D.text }}>
             {globalTab === "settings" ? "Settings" : (modules.find(m => m.id === tab)?.label || "")}
           </div>
           <ModeToggle mode={mode} onSwitch={switchMode} D={D} />
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", padding: 16, paddingBottom: BOTTOM_NAV_H + 16 }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: 16, paddingBottom: BOTTOM_NAV_H + 16 }}>
           {content}
         </div>
 
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: BOTTOM_NAV_H, background: `${D.sidebar}f5`, backdropFilter: "blur(16px)", borderTop: `1px solid ${D.border}`, display: "flex", alignItems: "center", justifyContent: "space-around", zIndex: 20 }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: BOTTOM_NAV_H, background: `${D.sidebar}f5`, backdropFilter: "blur(16px)", borderTop: `1px solid ${D.border}`, display: "flex", alignItems: "center", justifyContent: "space-around", zIndex: 20 }}>
           {mobileTabs.map(m => {
             const isActive = globalTab === "settings" ? m.id === "settings" : tab === m.id;
             return (
@@ -86,51 +87,52 @@ export default function App() {
 
   // ── Desktop ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column", position: "relative", zIndex: 1 }}>
+    <div style={{ height: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column", position: "relative", zIndex: 1, overflow: "hidden" }}>
       <GlobalStyles design={D} />
       <PageBackground design={D} />
 
-      {/* Floating top nav */}
+      {/* Floating top nav — fixed height so content area is exact */}
       <div
         onMouseEnter={() => setNavHovered(true)}
         onMouseLeave={() => setNavHovered(false)}
         style={{
-          position: "sticky", top: 0, zIndex: 20,
+          height: NAV_H,
+          flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "12px 24px",
+          padding: "0 24px",
+          position: "relative", zIndex: 20,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-
-          {/* Mode toggle */}
           <ModeToggle mode={mode} onSwitch={switchMode} D={D} />
 
-          <div style={{ width: 1, height: 18, background: D.border, margin: "0 6px", opacity: 0.6 }} />
+          <Divider D={D} />
 
-          {/* Module tabs — left group */}
           {modules.map(m => {
             const isActive = globalTab !== "settings" && tab === m.id;
-            return <NavTab key={m.id} m={m} isActive={isActive} navHovered={navHovered} D={D} onClick={() => setTab(m.id)} />;
+            return <NavTab key={m.id} m={m} isActive={isActive} expanded={navHovered} D={D} onClick={() => setTab(m.id)} />;
           })}
 
-          <div style={{ width: 1, height: 18, background: D.border, margin: "0 6px", opacity: 0.6 }} />
+          <Divider D={D} />
 
-          {/* Settings — right group */}
           <NavTab
             m={SETTINGS_MODULE}
             isActive={globalTab === "settings"}
-            navHovered={navHovered}
+            expanded={navHovered}
             D={D}
             onClick={() => setTab("settings")}
           />
-
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflow: "auto", position: "relative", zIndex: 1 }}>
-        <div style={{ padding: "8px 28px 28px" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      {/* Content — fills exact remaining viewport, scrolls internally */}
+      <div style={{
+        flex: 1,
+        overflowY: "auto",
+        position: "relative", zIndex: 1,
+      }}>
+        <div style={{ padding: "16px 28px 28px", height: "100%", boxSizing: "border-box" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto", height: "100%" }}>
             {content}
           </div>
         </div>
@@ -141,17 +143,15 @@ export default function App() {
 
 // ─── NavTab ───────────────────────────────────────────────────────────────────
 
-function NavTab({ m, isActive, navHovered, D, onClick }) {
+function NavTab({ m, isActive, expanded, D, onClick }) {
   return (
     <button
       onClick={onClick}
       title={m.label}
       style={{
-        display: "flex", alignItems: "center",
-        gap: 6,
-        width: navHovered ? "auto" : 36,
+        display: "flex", alignItems: "center", gap: 6,
         height: 36,
-        padding: navHovered ? "0 14px" : "0",
+        padding: expanded ? "0 14px" : "0 9px",
         justifyContent: "center",
         borderRadius: 999,
         border: `1px solid ${isActive ? D.blue + "60" : D.border}`,
@@ -160,9 +160,7 @@ function NavTab({ m, isActive, navHovered, D, onClick }) {
         cursor: "pointer",
         color: isActive ? D.blue : D.textMuted,
         fontSize: 12, fontWeight: isActive ? 600 : 400,
-        // No width transition — eliminates shake on leave
         transition: "background 0.2s, border-color 0.2s, color 0.2s, padding 0.22s cubic-bezier(0.4,0,0.2,1)",
-        overflow: "hidden",
         whiteSpace: "nowrap",
         flexShrink: 0,
         boxShadow: isActive
@@ -171,11 +169,15 @@ function NavTab({ m, isActive, navHovered, D, onClick }) {
       }}
     >
       <NavIcon path={m.icon} />
-      {navHovered && (
-        <span style={{ fontSize: 12 }}>{m.label}</span>
-      )}
+      {expanded && <span style={{ fontSize: 12 }}>{m.label}</span>}
     </button>
   );
+}
+
+// ─── Divider ─────────────────────────────────────────────────────────────────
+
+function Divider({ D }) {
+  return <div style={{ width: 1, height: 18, background: D.border, margin: "0 6px", opacity: 0.6 }} />;
 }
 
 // ─── ModeToggle ───────────────────────────────────────────────────────────────
