@@ -17,9 +17,9 @@ export default function App() {
   const isMobile = useIsMobile();
   const { mode, isForward, tab, setTab, switchMode, globalTab } = useNavigation();
 
-  const D         = design;
-  const modules   = isForward ? FWD_MODULES : BACK_MODULES;
-  const modeColor = isForward ? D.green : D.blue;
+  const D          = design;
+  const modules    = isForward ? FWD_MODULES : BACK_MODULES;
+  const modeColor  = isForward ? D.green : D.blue;
   const tradeCount = isForward ? fwdTrades.length : backTrades.length;
 
   const goToData = () => setTab(isForward ? "fwd-data" : "data");
@@ -51,7 +51,7 @@ export default function App() {
     </>
   );
 
-  // ── Mobile layout ─────────────────────────────────────────────────────────
+  // ── Mobile ────────────────────────────────────────────────────────────────
   if (isMobile) {
     const mobileTabs = [SETTINGS_MODULE, ...modules];
     return (
@@ -59,7 +59,6 @@ export default function App() {
         <GlobalStyles design={D} />
         <PageBackground design={D} />
 
-        {/* Topbar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${D.border}`, background: `${D.sidebar}ee`, backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 5 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: D.text }}>
             {globalTab === "settings" ? "Settings" : (modules.find(m => m.id === tab)?.label || "")}
@@ -71,7 +70,6 @@ export default function App() {
           {content}
         </div>
 
-        {/* Bottom nav */}
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: BOTTOM_NAV_H, background: `${D.sidebar}f5`, backdropFilter: "blur(16px)", borderTop: `1px solid ${D.border}`, display: "flex", alignItems: "center", justifyContent: "space-around", zIndex: 20 }}>
           {mobileTabs.map(m => {
             const isActive = globalTab === "settings" ? m.id === "settings" : tab === m.id;
@@ -87,7 +85,7 @@ export default function App() {
     );
   }
 
-  // ── Desktop layout ────────────────────────────────────────────────────────
+  // ── Desktop ───────────────────────────────────────────────────────────────
   const allTabs = [...modules, SETTINGS_MODULE];
 
   return (
@@ -95,71 +93,92 @@ export default function App() {
       <GlobalStyles design={D} />
       <PageBackground design={D} />
 
-      {/* Top nav bar */}
+      {/* Floating top nav — no background, no border, centered */}
       <div
         onMouseEnter={() => setNavHovered(true)}
         onMouseLeave={() => setNavHovered(false)}
         style={{
           position: "sticky", top: 0, zIndex: 20,
-          display: "flex", alignItems: "center", gap: 4,
-          padding: navHovered ? "10px 24px" : "6px 24px",
-          transition: "padding 0.2s ease, background 0.2s ease",
-          background: navHovered ? `${D.sidebar}f0` : `${D.sidebar}80`,
-          backdropFilter: "blur(16px)",
-          borderBottom: `1px solid ${navHovered ? D.border : "transparent"}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "12px 24px",
+          pointerEvents: "all",
+          // No background, no border — floats above content
         }}
       >
-        {/* Logo */}
-        <div style={{ fontSize: 12, fontWeight: 700, color: D.textMuted, marginRight: 12, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
-          Trading
-        </div>
+        {/* Pill group */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 
-        {/* Mode toggle */}
-        <ModeToggle mode={mode} onSwitch={switchMode} D={D} />
+          {/* Mode toggle */}
+          <ModeToggle mode={mode} onSwitch={switchMode} D={D} />
 
-        <div style={{ width: 1, height: 20, background: D.border, margin: "0 8px" }} />
+          <div style={{ width: 1, height: 18, background: D.border, margin: "0 6px", opacity: 0.6 }} />
 
-        {/* Module tabs */}
-        {allTabs.map(m => {
-          const isActive = m.id === "settings" ? globalTab === "settings" : (globalTab !== "settings" && tab === m.id);
-          return (
-            <button
-              key={m.id}
-              onClick={() => setTab(m.id)}
-              style={{
-                display: "flex", alignItems: "center", gap: navHovered ? 7 : 0,
-                padding: navHovered ? "6px 12px" : "6px 10px",
-                background: isActive ? `${D.blue}15` : "transparent",
-                border: `1px solid ${isActive ? D.blue + "40" : "transparent"}`,
-                borderRadius: 8, cursor: "pointer",
-                color: isActive ? D.blue : D.textMuted,
-                fontSize: 12, fontWeight: isActive ? 600 : 400,
-                transition: "all 0.2s ease",
-                overflow: "hidden", whiteSpace: "nowrap",
-              }}
-            >
-              <NavIcon path={m.icon} />
-              <span style={{
-                maxWidth: navHovered ? 80 : 0,
-                opacity: navHovered ? 1 : 0,
-                overflow: "hidden",
-                transition: "max-width 0.2s ease, opacity 0.15s ease",
-              }}>
-                {m.label}
-              </span>
-            </button>
-          );
-        })}
+          {/* Module tabs */}
+          {allTabs.map(m => {
+            const isActive = m.id === "settings"
+              ? globalTab === "settings"
+              : (globalTab !== "settings" && tab === m.id);
 
-        {/* Trade count */}
-        <div style={{ marginLeft: "auto", fontSize: 11, color: D.textMuted }}>
-          {tradeCount} trades
+            return (
+              <button
+                key={m.id}
+                onClick={() => setTab(m.id)}
+                title={m.label}
+                style={{
+                  display: "flex", alignItems: "center",
+                  gap: navHovered ? 6 : 0,
+                  // Circle → pill transition
+                  width: navHovered ? "auto" : 36,
+                  height: 36,
+                  padding: navHovered ? "0 14px" : "0",
+                  justifyContent: "center",
+                  borderRadius: 999, // always pill/circle shaped
+                  border: `1px solid ${isActive ? D.blue + "60" : D.border}`,
+                  background: isActive ? `${D.blue}18` : `${D.card}cc`,
+                  backdropFilter: "blur(12px)",
+                  cursor: "pointer",
+                  color: isActive ? D.blue : D.textMuted,
+                  fontSize: 12, fontWeight: isActive ? 600 : 400,
+                  transition: "all 0.22s cubic-bezier(0.4,0,0.2,1)",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  boxShadow: isActive
+                    ? `0 0 0 1px ${D.blue}20, 0 2px 8px rgba(0,0,0,0.12)`
+                    : "0 2px 8px rgba(0,0,0,0.08)",
+                }}
+              >
+                <NavIcon path={m.icon} />
+                <span style={{
+                  maxWidth: navHovered ? 80 : 0,
+                  opacity: navHovered ? 1 : 0,
+                  overflow: "hidden",
+                  transition: "max-width 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease",
+                  display: "inline-block",
+                }}>
+                  {m.label}
+                </span>
+              </button>
+            );
+          })}
+
+          <div style={{ width: 1, height: 18, background: D.border, margin: "0 6px", opacity: 0.6 }} />
+
+          {/* Trade count pill */}
+          <div style={{
+            height: 36, padding: "0 12px", borderRadius: 999,
+            border: `1px solid ${D.border}`, background: `${D.card}cc`,
+            backdropFilter: "blur(12px)", display: "flex", alignItems: "center",
+            fontSize: 11, color: D.textMuted, whiteSpace: "nowrap",
+          }}>
+            {tradeCount} trades
+          </div>
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Content */}
       <div style={{ flex: 1, overflow: "auto", position: "relative", zIndex: 1 }}>
-        <div style={{ padding: 28 }}>
+        <div style={{ padding: "8px 28px 28px" }}>
           <div style={{ maxWidth: 1200, margin: "0 auto" }}>
             {content}
           </div>
@@ -173,10 +192,14 @@ export default function App() {
 
 function ModeToggle({ mode, onSwitch, D }) {
   return (
-    <div style={{ display: "flex", background: `${D.border}50`, borderRadius: 8, padding: 2, gap: 2, border: `1px solid ${D.border}` }}>
+    <div style={{
+      display: "flex", borderRadius: 999, padding: 2, gap: 2,
+      border: `1px solid ${D.border}`, background: `${D.card}cc`,
+      backdropFilter: "blur(12px)",
+    }}>
       {[["backtesting", "Back"], ["forward", "Live"]].map(([m, label]) => (
         <button key={m} onClick={() => onSwitch(m)} style={{
-          padding: "4px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+          padding: "4px 12px", borderRadius: 999, border: "none", cursor: "pointer",
           fontSize: 11, fontWeight: 600,
           background: mode === m ? D.blue : "transparent",
           color: mode === m ? "#fff" : D.textMuted,
