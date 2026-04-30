@@ -63,18 +63,7 @@ function CalendarView({ trades, D }) {
           const bg    = data ? (data.pnl > 0 ? `${D.green}18` : data.pnl < 0 ? `${D.red}18` : `${D.yellow}15`) : "transparent";
           const color = data ? (data.pnl > 0 ? D.green : data.pnl < 0 ? D.red : D.yellow) : D.textMuted;
           return (
-            <div key={day} title={data ? `${data.trades} trades · ${fmt(data.pnl)}` : ""}
-              style={{ background: bg, border: `1px solid ${isToday ? D.blue : data ? color + "35" : D.border}`, borderRadius: 6, padding: "5px 4px", minHeight: 52 }}>
-              <div style={{ fontSize: 10, fontWeight: isToday ? 700 : 400, color: isToday ? D.blue : D.textMuted, marginBottom: 2 }}>{day}</div>
-              {data && (
-                <>
-                  <div style={{ fontSize: 10, fontWeight: 700, color, lineHeight: 1.2 }}>
-                    {data.pnl >= 0 ? "+" : ""}{Math.abs(data.pnl) >= 1000 ? `${(data.pnl/1000).toFixed(1)}k` : data.pnl.toFixed(0)}
-                  </div>
-                  <div style={{ fontSize: 9, color: D.textMuted, marginTop: 1 }}>{data.wins}W/{data.losses}L</div>
-                </>
-              )}
-            </div>
+
           );
         })}
       </div>
