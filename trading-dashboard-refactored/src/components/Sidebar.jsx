@@ -79,14 +79,7 @@ export default function Sidebar({
           })}
         </nav>
 
-        {/* Footer: trade count + refresh */}
-        <div style={{ padding: "12px 18px", borderTop: `1px solid ${D.border}`, flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: modeColor, flexShrink: 0 }} />
-          <span className={`nav-label${open ? "" : " hidden"}`} style={{ fontSize: 11, color: D.textMuted }}>
-            {tradeCount} trades
-          </span>
 
-        </div>
 
       </div>
     </div>
