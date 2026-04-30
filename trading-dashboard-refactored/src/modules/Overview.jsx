@@ -62,7 +62,6 @@ function CalendarView({ trades, D }) {
           const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
           const bg    = data ? (data.pnl > 0 ? `${D.green}18` : data.pnl < 0 ? `${D.red}18` : `${D.yellow}15`) : "transparent";
           const color = data ? (data.pnl > 0 ? D.green : data.pnl < 0 ? D.red : D.yellow) : D.textMuted;
-          return (
 
           );
         })}

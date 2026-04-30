@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f80f4ad-fa26-4406-8e2d-1ecd9f145d13" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/trading-dashboard-refactored/src/modules/PropFirm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/trading-dashboard-refactored/src/modules/PropFirm.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trading-dashboard-refactored/src/modules/Overview.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/trading-dashboard-refactored/src/modules/Overview.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
