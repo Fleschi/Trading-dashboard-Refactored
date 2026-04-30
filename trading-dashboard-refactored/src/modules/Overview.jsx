@@ -62,7 +62,20 @@ function CalendarView({ trades, D }) {
           const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
           const bg    = data ? (data.pnl > 0 ? `${D.green}18` : data.pnl < 0 ? `${D.red}18` : `${D.yellow}15`) : "transparent";
           const color = data ? (data.pnl > 0 ? D.green : data.pnl < 0 ? D.red : D.yellow) : D.textMuted;
-
+          return (
+            <div key={day} title={data ? `${data.trades} trades · ${fmt(data.pnl)}` : ""}
+              style={{ background: bg, border: `1px solid ${isToday ? D.blue : data ? color + "35" : D.border}`, borderRadius: 6, padding: "5px 4px", minHeight: 52 }}>
+              <div style={{ fontSize: 10, fontWeight: isToday ? 700 : 400, color: isToday ? D.blue : D.textMuted, marginBottom: 2 }}>{day}</div>
+              {data && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 700, color, lineHeight: 1.2 }}>
+                    {data.pnl >= 0 ? "+" : ""}{Math.abs(data.pnl) >= 1000 ? `${(data.pnl/1000).toFixed(1)}k` : data.pnl.toFixed(0)}
+                  </div>
+                  <div style={{ fontSize: 9, color: D.textMuted, marginTop: 1 }}>{data.wins}W/{data.losses}L</div>
+                </>
+              )}
+            </div>
+          );
         })}
       </div>
       {Object.keys(byDay).length > 0 && (
@@ -79,20 +92,21 @@ function CalendarView({ trades, D }) {
   );
 }
 
-// 1.2: Single account input, no preset buttons
+// 1.2: Vereinfachte Version - Fixiert auf 50k
 function MiniEquity({ stats, D }) {
-  const [accountSize, setAccountSize] = useState(50000);
-  const [inputVal, setInputVal]       = useState("50000");
+  // 1. State und Input-Logik entfernt, Account fest auf 50000
+  const accountSize = 50000;
 
   if (!stats || !stats.equityCurve) return null;
 
-  const scale = accountSize / BASE_ACCOUNT;
+  // 2. Skalierung entfernt (scale = 1), da wir direkt den 50k Basis-Account zeigen
   const chartData = [
     { index: 0, equity: accountSize },
     ...(stats.equityCurve || []).map(p => ({
       ...p,
-      equity: parseFloat((accountSize + p.equity * scale).toFixed(2)),
-      pnl:    parseFloat((p.pnl * scale).toFixed(2)),
+      // Wir nehmen an, dass stats.equityCurve bereits auf den Basis-Account bezogen ist
+      equity: parseFloat((accountSize + p.equity).toFixed(2)),
+      pnl:    parseFloat((p.pnl).toFixed(2)),
     })),
   ];
 
@@ -120,16 +134,8 @@ function MiniEquity({ stats, D }) {
   return (
     <GlowCard design={D} style={{ padding: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 11, color: D.textMuted }}>Account ($)</span>
-          <div style={{ display: "flex", alignItems: "center", background: D.bg, border: `1px solid ${D.border}`, borderRadius: 6, overflow: "hidden" }}>
-            <span style={{ fontSize: 10, color: D.textMuted, paddingLeft: 8 }}>$</span>
-            <input type="number" value={inputVal}
-              onChange={e => { setInputVal(e.target.value); const v = parseFloat(e.target.value); if (v > 0) setAccountSize(v); }}
-              style={{ width: 90, padding: "5px 8px", background: "transparent", border: "none", outline: "none", color: D.text, fontSize: 13 }} />
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 20 }}>
+        {/* 3. Das gesamte Eingabefeld-Div wurde hier entfernt */}
+        <div style={{ display: "flex", gap: 20, marginLeft: "auto" }}>
           {[["Start", `$${accountSize.toLocaleString()}`, D.text], ["Final", `$${finalEquity.toLocaleString()}`, accentColor], ["PnL", `${totalPnl >= 0 ? "+" : ""}$${Math.abs(totalPnl).toFixed(0)}`, accentColor]].map(([lbl, val, col]) => (
             <div key={lbl} style={{ textAlign: "right" }}>
               <div style={{ fontSize: 10, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{lbl}</div>
