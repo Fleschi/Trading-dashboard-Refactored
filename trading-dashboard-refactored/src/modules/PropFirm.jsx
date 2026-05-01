@@ -305,7 +305,7 @@ export default function PropFirm({ stats, design }) {
   };
 
   if (loading) return (
-    <div style={{ color: D.green, padding: 40, textAlign: "center", fontFamily: "monospace" }}>Loading...</div>
+    <div style={{ color: D.textMuted, padding: 40, textAlign: "center", fontFamily: "monospace" }}>Loading...</div>
   );
 
   const f      = firms[activeTab] || firms[0];
@@ -333,9 +333,9 @@ export default function PropFirm({ stats, design }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontSize: 13, color: D.textMuted }}>
           {rawTrades.length} trades · 2,000 runs
-          {saving && <span style={{ color: D.yellow, marginLeft: 10 }}>saving...</span>}
+          {saving && <span style={{ color: D.textMuted, marginLeft: 10 }}>saving...</span>}
         </div>
-        <button onClick={addFirm} style={{ padding: "8px 18px", background: D.green, color: "#0a0e1a", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+        <button onClick={addFirm} style={{ padding: "8px 18px", background: "transparent", color: D.text, borderRadius: 8, border: `1px solid ${D.border}`, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
           + Add Firm
         </button>
       </div>
@@ -463,10 +463,10 @@ export default function PropFirm({ stats, design }) {
             <div style={{ borderTop: `1px solid ${D.border}`, paddingTop: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: f.consistencyEnabled ? 10 : 0 }}>
                 <div onClick={() => upd("consistencyEnabled", !f.consistencyEnabled)}
-                  style={{ width: 38, height: 20, borderRadius: 10, background: f.consistencyEnabled ? D.yellow : D.border, cursor: "pointer", position: "relative", flexShrink: 0 }}>
+                  style={{ width: 38, height: 20, borderRadius: 10, background: f.consistencyEnabled ? D.blue : D.border, cursor: "pointer", position: "relative", flexShrink: 0 }}>
                   <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: f.consistencyEnabled ? 21 : 3, transition: "left 0.15s" }} />
                 </div>
-                <span style={{ fontSize: 12, color: f.consistencyEnabled ? D.yellow : D.textMuted }}>Consistency Rule</span>
+                <span style={{ fontSize: 12, color: f.consistencyEnabled ? D.blue : D.textMuted }}>Consistency Rule</span>
               </div>
               {f.consistencyEnabled && (
                 <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Max single day % of total profit" fkey="consistencyMaxDayPct" value={f.consistencyMaxDayPct} />
@@ -475,7 +475,7 @@ export default function PropFirm({ stats, design }) {
           </Section>
 
           {/* Funded */}
-          <Section title="Funded Account" color={D.text} open={openSections.funded} onToggle={() => setOpenSections(s => ({ ...s, funded: !s.funded }))} D={D}>
+          <Section title="Funded Account" color={D.blue} open={openSections.funded} onToggle={() => setOpenSections(s => ({ ...s, funded: !s.funded }))} D={D}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
               <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Max Drawdown (%)" fkey="fundedMaxDrawdown" value={f.fundedMaxDrawdown} />
               <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Daily Loss Limit (%)" fkey="fundedDailyLossLimit" value={f.fundedDailyLossLimit} />
@@ -497,10 +497,10 @@ export default function PropFirm({ stats, design }) {
             {(f.fundedDrawdownType === "trailing" || f.fundedDrawdownType === "eod_trailing") && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <div onClick={() => upd("fundedTrailingLock", !f.fundedTrailingLock)}
-                  style={{ width: 38, height: 20, borderRadius: 10, background: f.fundedTrailingLock ? D.green : D.border, cursor: "pointer", position: "relative", flexShrink: 0 }}>
+                  style={{ width: 38, height: 20, borderRadius: 10, background: f.fundedTrailingLock ? D.blue : D.border, cursor: "pointer", position: "relative", flexShrink: 0 }}>
                   <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: f.fundedTrailingLock ? 21 : 3, transition: "left 0.15s" }} />
                 </div>
-                <span style={{ fontSize: 12, color: f.fundedTrailingLock ? D.green : D.textMuted }}>Trailing DD locks at starting balance</span>
+                <span style={{ fontSize: 12, color: f.fundedTrailingLock ? D.blue : D.textMuted }}>Trailing DD locks at starting balance</span>
               </div>
             )}
           </Section>
@@ -535,7 +535,7 @@ export default function PropFirm({ stats, design }) {
                 ["Avg trades to pass", r.avgTradesToPass != null ? Math.round(r.avgTradesToPass).toString() : "—", D.text],
                 ["Avg days to pass",   fmtD(r.avgDaysToPass),                                        D.text],
                 ["Avg weeks to pass",  r.avgWeeksToPass != null ? r.avgWeeksToPass.toFixed(1) : "—", D.text],
-                ["Upfront cost",       `$${r.upfrontCost.toLocaleString()}`,                         D.yellow],
+                ["Upfront cost",       `$${r.upfrontCost.toLocaleString()}`,                         D.textMuted],
               ].map(([k, v, c]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${D.border}`, fontSize: 13 }}>
                   <span style={{ color: D.textMuted }}>{k}</span>
@@ -545,9 +545,9 @@ export default function PropFirm({ stats, design }) {
             </div>
 
             <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 18 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: D.green, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>Funded</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: D.textMuted, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>Funded</div>
               {[
-                ["Funded fail rate",    fmtPct(r.fundedFailRate),                                    r.fundedFailRate > 0.3 ? D.red : D.yellow],
+                ["Funded fail rate",    fmtPct(r.fundedFailRate),                                    r.fundedFailRate > 0.3 ? D.red : D.textMuted],
                 ["Avg months active",   r.avgMonthsActive ? `${r.avgMonthsActive.toFixed(1)} mo` : "—", D.text],
                 ["Avg payout / month",  fmtUSD(r.avgMonthlyPayout),                                  D.green],
                 ["Expected resets/year",r.expectedResetsPerYear.toFixed(1),                           D.red],
@@ -560,7 +560,7 @@ export default function PropFirm({ stats, design }) {
             </div>
 
             <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 18 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: D.yellow, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>ROI (after all costs)</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: D.textMuted, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>ROI (after all costs)</div>
               {[
                 ["Break-even",          r.breakEvenMonths ? `${r.breakEvenMonths.toFixed(1)} mo` : "—", D.blue],
                 ["Expected profit 6m",  fmtUSD(r.net6m),    r.net6m    > 0 ? D.green : D.red],
@@ -596,7 +596,7 @@ export default function PropFirm({ stats, design }) {
                   {[
                     ["12m net",     fmtUSD(res.netAnnual),  res.netAnnual > 0 ? D.green : D.red],
                     ["Break-even",  res.breakEvenMonths ? `${res.breakEvenMonths.toFixed(1)} mo` : "—", D.blue],
-                    ["Cost",        `$${res.upfrontCost.toLocaleString()}`, D.yellow],
+                    ["Cost",        `$${res.upfrontCost.toLocaleString()}`, D.textMuted],
                     ["Funded fail", fmtPct(res.fundedFailRate), D.red],
                   ].map(([k, v, c]) => (
                     <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0", borderBottom: `1px solid ${D.border}` }}>
