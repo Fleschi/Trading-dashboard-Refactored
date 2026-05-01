@@ -1,7 +1,7 @@
 import { GlowCard } from "../utils/ui";
 import { fmt } from "../utils/calculations";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 // ─── Equity Curve ─────────────────────────────────────────────────────────────
 
@@ -61,20 +61,10 @@ function EquityCurve({ stats, D }) {
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 function CalendarView({ trades, D }) {
-  const getLatestTradeDate = () => {
+  const [viewDate, setViewDate] = useState(() => {
     if (!trades?.length) return new Date();
     return new Date([...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0].date);
-  };
-
-  const [viewDate, setViewDate] = useState(getLatestTradeDate);
-
-  // Update viewDate jedes Mal wenn trades sich ändert
-  useEffect(() => {
-    if (trades?.length) {
-      const newestTrade = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-      setViewDate(new Date(newestTrade.date));
-    }
-  }, [trades]);
+  });
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -157,7 +147,7 @@ function CalendarView({ trades, D }) {
 
 // ─── Overview ─────────────────────────────────────────────────────────────────
 
-export default function Overview({ stats, trades, design: D }) {
+export default function Overview({ stats, design: D }) {
   if (!stats) return (
     <GlowCard design={D} style={{ padding: 40, textAlign: "center", color: D.textMuted }}>
       No trades yet. Add trades in the Data tab.
@@ -215,7 +205,7 @@ export default function Overview({ stats, trades, design: D }) {
         </div>
       </GlowCard>
 
-      <CalendarView trades={trades || stats.rawTrades || []} D={D} />
+      <CalendarView trades={stats.rawTrades || []} D={D} />
     </div>
   );
 }
