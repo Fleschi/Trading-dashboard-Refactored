@@ -475,7 +475,7 @@ export default function PropFirm({ stats, design }) {
           </Section>
 
           {/* Funded */}
-          <Section title="Funded Account" color={D.green} open={openSections.funded} onToggle={() => setOpenSections(s => ({ ...s, funded: !s.funded }))} D={D}>
+          <Section title="Funded Account" color={D.text} open={openSections.funded} onToggle={() => setOpenSections(s => ({ ...s, funded: !s.funded }))} D={D}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
               <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Max Drawdown (%)" fkey="fundedMaxDrawdown" value={f.fundedMaxDrawdown} />
               <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Daily Loss Limit (%)" fkey="fundedDailyLossLimit" value={f.fundedDailyLossLimit} />
