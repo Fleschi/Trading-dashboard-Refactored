@@ -68,12 +68,13 @@ function CalendarView({ trades, D }) {
 
   const [viewDate, setViewDate] = useState(getLatestTradeDate);
 
+  // Update viewDate jedes Mal wenn trades sich ändert
   useEffect(() => {
     if (trades?.length) {
       const newestTrade = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
       setViewDate(new Date(newestTrade.date));
     }
-  }, [trades, trades?.length]);
+  }, [trades]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -156,7 +157,7 @@ function CalendarView({ trades, D }) {
 
 // ─── Overview ─────────────────────────────────────────────────────────────────
 
-export default function Overview({ stats, design: D }) {
+export default function Overview({ stats, trades, design: D }) {
   if (!stats) return (
     <GlowCard design={D} style={{ padding: 40, textAlign: "center", color: D.textMuted }}>
       No trades yet. Add trades in the Data tab.
@@ -214,7 +215,7 @@ export default function Overview({ stats, design: D }) {
         </div>
       </GlowCard>
 
-      <CalendarView trades={stats.rawTrades || []} D={D} />
+      <CalendarView trades={trades || stats.rawTrades || []} D={D} />
     </div>
   );
 }
