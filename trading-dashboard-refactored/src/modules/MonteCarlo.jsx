@@ -12,19 +12,17 @@ function calcTradesPerWeek(trades) {
     const wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
     map[`${d.getFullYear()}-${wk}`] = 1;
   }
-  const weeks = Object.keys(map).length;
-  return Math.max(1, trades.length / Math.max(1, weeks));
+  return Math.max(1, trades.length / Math.max(1, Object.keys(map).length));
 }
 
 function runMC(trades, simCount, weeks) {
-  if (!trades || trades.length === 0) return [];
+  if (!trades?.length) return [];
   const pnls = trades.map(t => t.pnl);
   const tradesPerWeek = calcTradesPerWeek(trades);
   const tradesTotal = Math.min(Math.round(weeks * tradesPerWeek), 1500);
   const snapshotInterval = Math.max(1, Math.round(tradesPerWeek));
   const effectiveSimCount = Math.min(simCount, Math.floor(600000 / Math.max(tradesTotal, 1)));
   const results = [];
-
   for (let s = 0; s < effectiveSimCount; s++) {
     let equity = 0, peak = 0, maxDD = 0;
     const path = [0];
@@ -41,54 +39,35 @@ function runMC(trades, simCount, weeks) {
   return results;
 }
 
-function PathHeatmap({ mcResults, design }) {
-  const D = design;
-  const W = 700, H = 320;
+function PathHeatmap({ mcResults, design: D }) {
+  const W = 700, H = 300;
   const PAD = { top: 16, right: 16, bottom: 32, left: 56 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
-
   const pathLen = mcResults[0]?.path.length || 0;
   if (pathLen < 2) return null;
-
   const allVals = mcResults.flatMap(r => r.path);
-  const yMin = Math.min(...allVals);
-  const yMax = Math.max(...allVals);
+  const yMin = Math.min(...allVals), yMax = Math.max(...allVals);
   const yRange = yMax - yMin || 1;
-
   const xScale = i => PAD.left + (i / (pathLen - 1)) * innerW;
   const yScale = v => PAD.top + innerH - ((v - yMin) / yRange) * innerH;
-
-  const pathToPoints = (path) =>
-    path.map((v, i) => `${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
-
+  const pathToPoints = path => path.map((v, i) => `${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
   const yTickVals = Array.from({ length: 6 }, (_, i) => yMin + (yRange / 5) * i);
-  const fmtY = v => v >= 0 ? `+$${(v / 1000).toFixed(1)}k` : `-$${(Math.abs(v) / 1000).toFixed(1)}k`;
-
+  const fmtY = v => v >= 0 ? `+$${(v/1000).toFixed(1)}k` : `-$${(Math.abs(v)/1000).toFixed(1)}k`;
   return (
-    <div style={{ width: "100%" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
-        {yTickVals.map((v, i) => (
-          <g key={i}>
-            <line x1={PAD.left} y1={yScale(v)} x2={W - PAD.right} y2={yScale(v)}
-              stroke={D.border} strokeWidth="0.5" strokeDasharray="3,3" />
-            <text x={PAD.left - 6} y={yScale(v) + 4} textAnchor="end"
-              fill={D.textMuted} fontSize="9">{fmtY(v)}</text>
-          </g>
-        ))}
-        {yMin < 0 && yMax > 0 && (
-          <line x1={PAD.left} y1={yScale(0)} x2={W - PAD.right} y2={yScale(0)}
-            stroke={D.border} strokeWidth="1" />
-        )}
-        {mcResults.map((r, i) => (
-          <polyline key={i} points={pathToPoints(r.path)} fill="none"
-            stroke={r.finalPnl >= 0 ? D.green : D.red}
-            strokeWidth="0.5" strokeOpacity="0.07" />
-        ))}
-        <text x={PAD.left + innerW / 2} y={H - 4} textAnchor="middle"
-          fill={D.textMuted} fontSize="10">months</text>
-      </svg>
-    </div>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
+      {yTickVals.map((v, i) => (
+        <g key={i}>
+          <line x1={PAD.left} y1={yScale(v)} x2={W - PAD.right} y2={yScale(v)} stroke={D.border} strokeWidth="0.5" strokeDasharray="3,3" />
+          <text x={PAD.left - 6} y={yScale(v) + 4} textAnchor="end" fill={D.textMuted} fontSize="9">{fmtY(v)}</text>
+        </g>
+      ))}
+      {yMin < 0 && yMax > 0 && <line x1={PAD.left} y1={yScale(0)} x2={W - PAD.right} y2={yScale(0)} stroke={D.border} strokeWidth="1" />}
+      {mcResults.map((r, i) => (
+        <polyline key={i} points={pathToPoints(r.path)} fill="none" stroke={r.finalPnl >= 0 ? D.green : D.red} strokeWidth="0.5" strokeOpacity="0.07" />
+      ))}
+      <text x={PAD.left + innerW / 2} y={H - 4} textAnchor="middle" fill={D.textMuted} fontSize="10">months</text>
+    </svg>
   );
 }
 
@@ -100,17 +79,12 @@ export default function MonteCarlo({ stats, design }) {
   useEffect(() => {
     if (!stats?.rawTrades?.length) return;
     setMcResults(null);
-    const id = setTimeout(() => {
-      const res = runMC(stats.rawTrades, 2000, simWeeks);
-      setMcResults(res);
-    }, 10);
+    const id = setTimeout(() => { setMcResults(runMC(stats.rawTrades, 2000, simWeeks)); }, 10);
     return () => clearTimeout(id);
   }, [stats, simWeeks]);
 
   if (!stats?.rawTrades?.length) return (
-    <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: 40, textAlign: "center", color: D.textMuted }}>
-      No trades yet.
-    </div>
+    <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: 40, textAlign: "center", color: D.textMuted }}>No trades yet.</div>
   );
 
   const fmtMC = n => Number(n) >= 0 ? `+$${Math.abs(Number(n)).toFixed(0)}` : `-$${Math.abs(Number(n)).toFixed(0)}`;
@@ -121,40 +95,49 @@ export default function MonteCarlo({ stats, design }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-      {/* Timeframe selector */}
-      <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12, color: D.textMuted }}>Timeframe:</span>
-        {[["1M", 4], ["3M", 13], ["6M", 26], ["12M", 52]].map(([label, w]) => {
-          const active = simWeeks === w;
-          return (
-            <button key={w} onClick={() => setSimWeeks(w)}
-              style={{ padding: "4px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12, border: `1px solid ${active ? D.blue : D.border}`, background: active ? `${D.blue}15` : "transparent", color: active ? D.text : D.textMuted }}>
-              {label}
-            </button>
-          );
-        })}
-        <span style={{ fontSize: 11, color: D.textMuted, marginLeft: "auto" }}>
-          {mcResults ? mcResults.length.toLocaleString() : "…"} simulations · {stats.rawTrades.length} trades
-        </span>
-      </div>
-
-      {/* Path chart */}
+      {/* ── Timeframe + Paths — single card ── */}
       <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: 24 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16 }}>Monte Carlo — Equity Paths</div>
-        {!mcResults ? (
-          <div style={{ height: 320, display: "flex", alignItems: "center", justifyContent: "center", color: D.textMuted, fontSize: 13 }}>
-            Simulating…
+        {/* Timeframe row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, color: D.textMuted, fontWeight: 500 }}>Timeframe</span>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[["1M", 4], ["3M", 13], ["6M", 26], ["12M", 52]].map(([label, w]) => {
+              const active = simWeeks === w;
+              return (
+                <button key={w} onClick={() => setSimWeeks(w)} style={{
+                  padding: "4px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12,
+                  border: `1px solid ${active ? D.blue : D.border}`,
+                  background: active ? `${D.blue}15` : "transparent",
+                  color: active ? D.text : D.textMuted,
+                  transition: "all 0.15s",
+                }}>
+                  {label}
+                </button>
+              );
+            })}
           </div>
+          <span style={{ fontSize: 11, color: D.textMuted, marginLeft: "auto" }}>
+            {mcResults ? mcResults.length.toLocaleString() : "…"} sims · {stats.rawTrades.length} trades
+          </span>
+        </div>
+
+        {/* Divider */}
+        <div style={{ borderTop: `1px solid ${D.border}`, marginBottom: 20 }} />
+
+        {/* Chart */}
+        <div style={{ fontSize: 12, fontWeight: 600, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 16 }}>Equity Paths</div>
+        {!mcResults ? (
+          <div style={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center", color: D.textMuted, fontSize: 13 }}>Simulating…</div>
         ) : (
           <PathHeatmap mcResults={mcResults} design={D} />
         )}
       </div>
 
-      {/* Percentile table */}
+      {/* ── Percentile table ── */}
       {mcResults && (
         <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: 24 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16 }}>Percentile Summary</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 16 }}>Percentile Summary</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10 }}>
             {[
               ["P10 (Worst)",  percentile(mcFinals, 10)],
               ["P25",          percentile(mcFinals, 25)],
@@ -162,24 +145,21 @@ export default function MonteCarlo({ stats, design }) {
               ["P75",          percentile(mcFinals, 75)],
               ["P90 (Best)",   percentile(mcFinals, 90)],
               ["Max DD P90",   -percentile(mcDDs, 90)],
-            ].map(([label, value]) => {
-              const color = value >= 0 ? D.green : D.red;
-              return (
-                <div key={label} style={{ background: D.bg, border: `1px solid ${D.border}`, borderRadius: 10, padding: "14px 16px" }}>
-                  <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color }}>{fmtMC(value)}</div>
-                </div>
-              );
-            })}
+            ].map(([label, value]) => (
+              <div key={label} style={{ background: D.bg, border: `1px solid ${D.border}`, borderRadius: 10, padding: "14px 16px" }}>
+                <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: value >= 0 ? D.green : D.red }}>{fmtMC(value)}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Histogram */}
+      {/* ── Histogram ── */}
       {mcResults && (
         <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: 24 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16 }}>Final PnL Distribution</div>
-          <ResponsiveContainer width="100%" height={200}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 16 }}>Final PnL Distribution</div>
+          <ResponsiveContainer width="100%" height={180}>
             <BarChart data={hist}>
               <CartesianGrid strokeDasharray="3 3" stroke={D.border} vertical={false} />
               <XAxis dataKey="range" tick={{ fontSize: 10, fill: D.textMuted }} />

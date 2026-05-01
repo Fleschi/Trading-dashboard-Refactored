@@ -372,7 +372,7 @@ export default function PropFirm({ stats, design }) {
 
               {/* Stats */}
               {r && rawTrades.length > 0 ? (
-                <div style={{ display: "flex", gap: 0, flex: 1, flexWrap: "wrap" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", flex: 1 }}>
                   {[
                     ["Pass Rate",      fmtPct(r.passRate),       r.passRate > 0.5 ? D.green : D.red],
                     ["Fail Rate",      fmtPct(r.failRate),       D.red],
@@ -382,9 +382,9 @@ export default function PropFirm({ stats, design }) {
                     ["Months active",  r.avgMonthsActive ? `${r.avgMonthsActive.toFixed(1)}mo` : "—", D.text],
                     ["Cost",           `$${r.upfrontCost.toLocaleString()}`, D.textMuted],
                   ].map(([label, value, color], idx, arr) => (
-                    <div key={label} style={{ flex: "1 1 auto", padding: "4px 16px", borderRight: idx < arr.length - 1 ? `1px solid ${D.border}` : "none", minWidth: 80 }}>
-                      <div style={{ fontSize: 10, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{label}</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "monospace" }}>{value}</div>
+                    <div key={label} style={{ padding: "4px 16px", borderRight: idx < arr.length - 1 ? `1px solid ${D.border}` : "none" }}>
+                      <div style={{ fontSize: 10, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, whiteSpace: "nowrap" }}>{label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "monospace", whiteSpace: "nowrap" }}>{value}</div>
                     </div>
                   ))}
                 </div>

@@ -9,7 +9,7 @@ import Settings         from "./modules/Settings";
 import PageBackground   from "./components/PageBackground";
 
 const FONT  = "'DM Sans', system-ui, sans-serif";
-const NAV_H = 60;
+const NAV_H = 56; // nav floats above content, doesn't consume layout space
 
 export default function App() {
   const { backTrades, setBackTrades, fwdTrades, setFwdTrades, backStats, loading, error } = useTradeData();
@@ -55,14 +55,22 @@ export default function App() {
   if (isMobile) {
     const mobileTabs = [SETTINGS_MODULE, ...modules];
     return (
-      <div style={{ height: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column", position: "relative", zIndex: 1, overflow: "hidden" }}>
+      <div style={{ height: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column", position: "relative", zIndex: 1, overflow: "hidden", background: D.bg }}>
         <GlobalStyles design={D} />
         <PageBackground design={D} />
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${D.border}`, background: `${D.sidebar}ee`, backdropFilter: "blur(12px)", flexShrink: 0 }}>
+        {/* Mobile topbar — uses design tokens */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "12px 16px", flexShrink: 0,
+          borderBottom: `1px solid ${D.border}`,
+          background: `${D.card}ee`,
+          backdropFilter: "blur(12px)",
+        }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: D.text }}>
             {globalTab === "settings" ? "Settings" : (modules.find(m => m.id === tab)?.label || "")}
           </div>
+          {/* Mode toggle — uses lg-mode CSS class which uses D.* vars */}
           <div className="lg-mode">
             {[["backtesting", "Back"], ["forward", "Live"]].map(([m, label]) => (
               <button key={m} className={`lg-mode-btn${mode === m ? " active" : ""}`} onClick={() => switchMode(m)}>{label}</button>
@@ -70,15 +78,29 @@ export default function App() {
           </div>
         </div>
 
+        {/* Scrollable content */}
         <div style={{ flex: 1, overflowY: "auto", padding: 16, paddingBottom: BOTTOM_NAV_H + 16 }}>
           {content}
         </div>
 
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: BOTTOM_NAV_H, background: `${D.sidebar}f5`, backdropFilter: "blur(16px)", borderTop: `1px solid ${D.border}`, display: "flex", alignItems: "center", justifyContent: "space-around", zIndex: 20 }}>
+        {/* Bottom nav — uses design tokens */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          height: BOTTOM_NAV_H,
+          background: `${D.card}f5`,
+          backdropFilter: "blur(16px)",
+          borderTop: `1px solid ${D.border}`,
+          display: "flex", alignItems: "center", justifyContent: "space-around",
+          zIndex: 20,
+        }}>
           {mobileTabs.map(m => {
             const isActive = globalTab === "settings" ? m.id === "settings" : tab === m.id;
             return (
-              <button key={m.id} onClick={() => setTab(m.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 0", background: "none", border: "none", cursor: "pointer", color: isActive ? modeColor : D.textMuted }}>
+              <button key={m.id} onClick={() => setTab(m.id)} style={{
+                flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                padding: "6px 0", background: "none", border: "none", cursor: "pointer",
+                color: isActive ? modeColor : D.textMuted,
+              }}>
                 <NavIcon path={m.icon} />
                 <span style={{ fontSize: 9, fontWeight: isActive ? 700 : 400, letterSpacing: "0.04em" }}>{m.label}</span>
               </button>
@@ -89,26 +111,27 @@ export default function App() {
     );
   }
 
-  // ── Desktop ───────────────────────────────────────────────────────────────
+  // ── Desktop — floating nav ─────────────────────────────────────────────────
   return (
-    <div style={{ height: "100vh", color: D.text, fontFamily: FONT, display: "flex", flexDirection: "column", position: "relative", zIndex: 1, overflow: "hidden" }}>
+    <div style={{ height: "100vh", color: D.text, fontFamily: FONT, position: "relative", zIndex: 1, overflow: "hidden", background: D.bg }}>
       <GlobalStyles design={D} />
       <PageBackground design={D} />
 
-      {/* Top nav */}
+      {/* Floating nav — position: fixed, no layout space consumed */}
       <div
         style={{
-          height: NAV_H, flexShrink: 0,
+          position: "fixed", top: 0, left: 0, right: 0,
+          height: NAV_H, zIndex: 20,
           display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "0 24px", position: "relative", zIndex: 20,
+          padding: "0 24px",
+          pointerEvents: "none", // let clicks through the transparent area
         }}
         onMouseEnter={() => setNavHovered(true)}
         onMouseLeave={() => setNavHovered(false)}
       >
-        {/* Liquid glass shell */}
-        <div className="lg-shell">
+        {/* The shell itself captures pointer events */}
+        <div className="lg-shell" style={{ pointerEvents: "all" }}>
 
-          {/* Mode toggle */}
           <div className="lg-mode">
             {[["backtesting", "Back"], ["forward", "Live"]].map(([m, label]) => (
               <button key={m} className={`lg-mode-btn${mode === m ? " active" : ""}`} onClick={() => switchMode(m)}>{label}</button>
@@ -117,16 +140,10 @@ export default function App() {
 
           <div className="lg-divider" />
 
-          {/* Module tabs */}
           {modules.map(m => {
             const isActive = globalTab !== "settings" && tab === m.id;
             return (
-              <button
-                key={m.id}
-                className={`lg-btn${isActive ? " active" : ""}`}
-                onClick={() => setTab(m.id)}
-                title={m.label}
-              >
+              <button key={m.id} className={`lg-btn${isActive ? " active" : ""}`} onClick={() => setTab(m.id)} title={m.label}>
                 <NavIcon path={m.icon} />
                 {navHovered && <span>{m.label}</span>}
               </button>
@@ -135,12 +152,7 @@ export default function App() {
 
           <div className="lg-divider" />
 
-          {/* Settings */}
-          <button
-            className={`lg-btn${globalTab === "settings" ? " active" : ""}`}
-            onClick={() => setTab("settings")}
-            title={SETTINGS_MODULE.label}
-          >
+          <button className={`lg-btn${globalTab === "settings" ? " active" : ""}`} onClick={() => setTab("settings")} title={SETTINGS_MODULE.label}>
             <NavIcon path={SETTINGS_MODULE.icon} />
             {navHovered && <span>{SETTINGS_MODULE.label}</span>}
           </button>
@@ -148,10 +160,10 @@ export default function App() {
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1 }}>
-        <div style={{ padding: "16px 28px 28px", height: "100%", boxSizing: "border-box" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto", height: "100%" }}>
+      {/* Full-height scrollable content — paddingTop so content starts below nav */}
+      <div style={{ height: "100%", overflowY: "auto", position: "relative", zIndex: 1 }}>
+        <div style={{ paddingTop: NAV_H + 12, padding: `${NAV_H + 12}px 28px 28px` }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
             {content}
           </div>
         </div>
