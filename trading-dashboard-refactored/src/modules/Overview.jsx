@@ -73,7 +73,7 @@ function CalendarView({ trades, D }) {
       const newestTrade = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
       setViewDate(new Date(newestTrade.date));
     }
-  }, [trades]);
+  }, [trades, trades?.length]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
