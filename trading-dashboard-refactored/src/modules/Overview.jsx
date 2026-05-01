@@ -28,7 +28,7 @@ function EquityCurve({ stats, D }) {
     return (
       <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 12 }}>
         <div style={{ color: D.textMuted, marginBottom: 2 }}>Trade #{d.index}</div>
-        <div style={{ color: accent, fontWeight: 600 }}>{d.equity >= 0 ? "+" : ""}{fmt(d.equity)}</div>
+        <div style={{ color: accent, fontWeight: 600 }}>{d.equity >= 0 ? "" : ""}{fmt(d.equity)}</div>
       </div>
     );
   };
