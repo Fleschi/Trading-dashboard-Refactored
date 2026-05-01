@@ -61,17 +61,16 @@ function EquityCurve({ stats, D }) {
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 function CalendarView({ trades, D }) {
-  const getLatestTradeDate = () => {
+  const [viewDate, setViewDate] = useState(() => {
     if (!trades?.length) return new Date();
     return new Date([...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0].date);
-  };
-
-  const [viewDate, setViewDate] = useState(getLatestTradeDate());
-
-  useEffect(() => {
-    setViewDate(getLatestTradeDate());
-  }, [trades?.length]);
-
+  });
+useEffect(() => {
+  if (trades?.length) {
+    const newestTrade = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    setViewDate(new Date(newestTrade.date));
+  }
+}, [trades?.length, trades?.[trades.length - 1]?.date]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
