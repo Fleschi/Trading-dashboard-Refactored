@@ -5,31 +5,14 @@ import { loadPropFirms, savePropFirm, updatePropFirm, deletePropFirm } from "../
 import { fitStudentT, sampleStudentT } from "../utils/calculations";
 
 const DEFAULT_FIRM = (id) => ({
-  id,
-  name: `Prop Firm ${id}`,
-  evalAccountSize: 100000,
-  evalProfitTarget: 8,
-  evalMaxDrawdown: 10,
-  evalDrawdownType: "static",
-  evalDailyLossLimit: 5,
-  evalMinTradingDays: 10,
-  evalTrailingLock: false,
-  evalTimeLimitEnabled: false,
-  evalTimeLimitDays: 30,
-  costModel: "one_time",
-  evalCost: 500,
-  consistencyEnabled: false,
-  consistencyMaxDayPct: 30,
-  fundedMaxDrawdown: 5,
-  fundedDrawdownType: "trailing",
-  fundedDailyLossLimit: 4,
-  fundedProfitSplit: 80,
-  fundedMinPayout: 500,
-  fundedMinWinDays: 10,
-  fundedMinProfitPerTrade: 0,
-  fundedActivationFee: 0,
-  fundedResetCost: 300,
-  fundedTrailingLock: false,
+  id, name: `Prop Firm ${id}`,
+  evalAccountSize: 100000, evalProfitTarget: 8, evalMaxDrawdown: 10,
+  evalDrawdownType: "static", evalDailyLossLimit: 5, evalMinTradingDays: 10,
+  evalTrailingLock: false, evalTimeLimitEnabled: false, evalTimeLimitDays: 30,
+  costModel: "one_time", evalCost: 500, consistencyEnabled: false, consistencyMaxDayPct: 30,
+  fundedMaxDrawdown: 5, fundedDrawdownType: "trailing", fundedDailyLossLimit: 4,
+  fundedProfitSplit: 80, fundedMinPayout: 500, fundedMinWinDays: 10,
+  fundedMinProfitPerTrade: 0, fundedActivationFee: 0, fundedResetCost: 300, fundedTrailingLock: false,
 });
 
 const DRAWDOWN_LABELS = {
@@ -38,173 +21,107 @@ const DRAWDOWN_LABELS = {
   eod_trailing: "EOD Trailing (end-of-day peak)",
 };
 
-// ── Monte Carlo simulation ─────────────────────────────────────────────────────
+// ── Simulation ────────────────────────────────────────────────────────────────
+
 function simulateFirm(firm, rawTrades, simCount = 2000) {
-  if (!rawTrades || rawTrades.length === 0) return null;
-
-  const acct           = firm.evalAccountSize;
-  const evalMaxDD      = acct * (firm.evalMaxDrawdown / 100);
-  const evalDailyLim   = firm.evalDailyLossLimit > 0 ? acct * (firm.evalDailyLossLimit / 100) : Infinity;
-  const evalTarget     = acct * (firm.evalProfitTarget / 100);
-  const minDays        = firm.evalMinTradingDays;
-  const maxTrades      = firm.evalTimeLimitEnabled ? firm.evalTimeLimitDays * 10 : 5000;
-  const fundedMaxDD    = acct * (firm.fundedMaxDrawdown / 100);
+  if (!rawTrades?.length) return null;
+  const acct = firm.evalAccountSize;
+  const evalMaxDD = acct * (firm.evalMaxDrawdown / 100);
+  const evalDailyLim = firm.evalDailyLossLimit > 0 ? acct * (firm.evalDailyLossLimit / 100) : Infinity;
+  const evalTarget = acct * (firm.evalProfitTarget / 100);
+  const maxTrades = firm.evalTimeLimitEnabled ? firm.evalTimeLimitDays * 10 : 5000;
+  const fundedMaxDD = acct * (firm.fundedMaxDrawdown / 100);
   const fundedDailyLim = firm.fundedDailyLossLimit > 0 ? acct * (firm.fundedDailyLossLimit / 100) : Infinity;
-
   const dist = fitStudentT(rawTrades.map(t => t.pnl));
-
-  // Scale factor for eval phase (based on 50k base account)
   const BASE_ACCOUNT = 50000;
   const historicalLosses = rawTrades.filter(t => t.pnl < 0).map(t => Math.abs(t.pnl));
-  const avgHistoricalLoss = historicalLosses.length > 0
-    ? historicalLosses.reduce((a, b) => a + b, 0) / historicalLosses.length
-    : 250;
+  const avgHistoricalLoss = historicalLosses.length > 0 ? historicalLosses.reduce((a, b) => a + b, 0) / historicalLosses.length : 250;
   const scaleFactor = (acct * (avgHistoricalLoss / BASE_ACCOUNT)) / avgHistoricalLoss;
-
-  // Trades per week from actual data
   const weeklyMap = {};
   for (const t of rawTrades) {
-    const d = new Date(t.date);
-    if (isNaN(d)) continue;
+    const d = new Date(t.date); if (isNaN(d)) continue;
     const jan1 = new Date(d.getFullYear(), 0, 1);
     const wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
     weeklyMap[`${d.getFullYear()}-W${wk}`] = (weeklyMap[`${d.getFullYear()}-W${wk}`] || 0) + 1;
   }
-  const weeks         = Object.keys(weeklyMap).length;
+  const weeks = Object.keys(weeklyMap).length;
   const tradesPerWeek = weeks > 0 ? rawTrades.length / weeks : 5;
-  const tradesPerDay  = tradesPerWeek / 5;
-
-  // ── Expectancy directly from historical trades, scaled to prop account ──
-  const wins       = rawTrades.filter(t => t.pnl > 0);
-  const losses     = rawTrades.filter(t => t.pnl < 0);
-  const winRate    = (wins.length + losses.length) > 0 ? wins.length / (wins.length + losses.length) : 0;
-  const avgWin     = wins.length   ? wins.reduce((a, t)   => a + t.pnl, 0) / wins.length   : 0;
-  const avgLoss    = losses.length ? losses.reduce((a, t) => a + t.pnl, 0) / losses.length : 0;
+  const tradesPerDay = tradesPerWeek / 5;
+  const wins = rawTrades.filter(t => t.pnl > 0), losses = rawTrades.filter(t => t.pnl < 0);
+  const winRate = (wins.length + losses.length) > 0 ? wins.length / (wins.length + losses.length) : 0;
+  const avgWin = wins.length ? wins.reduce((a, t) => a + t.pnl, 0) / wins.length : 0;
+  const avgLoss = losses.length ? losses.reduce((a, t) => a + t.pnl, 0) / losses.length : 0;
   const expectancy = winRate * avgWin + (1 - winRate) * avgLoss;
-
-  // Scale expectancy to prop firm account size
-  const accountScale     = acct / BASE_ACCOUNT;
-  const scaledExpectancy = expectancy * accountScale;
-
-  // Monthly gross PnL based on actual trade frequency
-  const tradesPerMonth  = tradesPerWeek * 4;
+  const scaledExpectancy = expectancy * (acct / BASE_ACCOUNT);
+  const tradesPerMonth = tradesPerWeek * 4;
   const grossMonthlyPnl = scaledExpectancy * tradesPerMonth;
+  const avgMonthlyPayout = grossMonthlyPnl >= firm.fundedMinPayout ? grossMonthlyPnl * (firm.fundedProfitSplit / 100) : 0;
 
-  // Payout after split, only if min payout threshold reached
-  const avgMonthlyPayout = grossMonthlyPnl >= firm.fundedMinPayout
-    ? grossMonthlyPnl * (firm.fundedProfitSplit / 100)
-    : 0;
-
-  // ── Simulation: only used for pass rate + funded fail rate ──
-  let evalPassed = 0;
-  let tradesToPassList = [];
-  let fundedFailures = 0;
-  let fundedMonthsActive = [];
-
+  let evalPassed = 0, tradesToPassList = [], fundedFailures = 0, fundedMonthsActive = [];
   for (let s = 0; s < simCount; s++) {
-    // Phase 1: Evaluation
     let equity = 0, peak = 0, breached = false, passed = false;
     let tradeCount = 0, dayPnl = 0, tradesThisDay = 0, daysRun = 0;
-
     for (let tr = 0; tr < maxTrades; tr++) {
       const pnl = sampleStudentT(dist) * scaleFactor;
       equity += pnl; dayPnl += pnl; tradesThisDay++; tradeCount++;
-
       if (tradesThisDay >= tradesPerDay) {
         if (dayPnl < -evalDailyLim) { breached = true; break; }
         daysRun++; dayPnl = 0; tradesThisDay = 0;
       }
-
       if (equity > peak) peak = equity;
       const evalEffPeak = (firm.evalTrailingLock && firm.evalDrawdownType !== "static") ? Math.min(peak, 0) : peak;
       const dd = firm.evalDrawdownType === "static" ? -equity : evalEffPeak - equity;
       if (dd >= evalMaxDD) { breached = true; break; }
-
-      if (!passed && equity >= evalTarget && daysRun >= minDays) {
-        passed = true;
-        tradesToPassList.push(tradeCount);
-        break;
-      }
+      if (!passed && equity >= evalTarget && daysRun >= firm.evalMinTradingDays) { passed = true; tradesToPassList.push(tradeCount); break; }
     }
-
     if (!passed || breached) continue;
     evalPassed++;
-
-    // Phase 2: Funded — only track failures and months active
     let fEquity = 0, fPeak = 0, monthsThisSim = 0;
-    const trailingLock   = firm.fundedTrailingLock && firm.fundedDrawdownType !== "static";
+    const trailingLock = firm.fundedTrailingLock && firm.fundedDrawdownType !== "static";
     const tradesPerMonthSim = Math.round(tradesPerDay * 5 * 4);
-
     for (let month = 0; month < 12; month++) {
-      let monthFailed = false;
-      let mDayPnl = 0, mTradesThisDay = 0;
-
+      let monthFailed = false, mDayPnl = 0, mTradesThisDay = 0;
       for (let tr = 0; tr < tradesPerMonthSim; tr++) {
         const pnl = sampleStudentT(dist) * scaleFactor;
         fEquity += pnl; mDayPnl += pnl; mTradesThisDay++;
-
         if (mTradesThisDay >= tradesPerDay) {
           if (mDayPnl < -fundedDailyLim) { monthFailed = true; break; }
           mDayPnl = 0; mTradesThisDay = 0;
         }
-
         if (fEquity > fPeak) fPeak = fEquity;
         const effPeak = trailingLock ? Math.min(fPeak, 0) : fPeak;
         const fDD = firm.fundedDrawdownType === "static" ? -fEquity : effPeak - fEquity;
         if (fDD >= fundedMaxDD) { monthFailed = true; break; }
       }
-
       if (monthFailed) { fundedFailures++; break; }
       monthsThisSim++;
     }
     fundedMonthsActive.push(monthsThisSim);
   }
 
-  const passRate       = evalPassed / simCount;
-  const avgTradesToPass = tradesToPassList.length
-    ? tradesToPassList.reduce((a, b) => a + b, 0) / tradesToPassList.length
-    : null;
-  const avgDaysToPass  = avgTradesToPass != null ? avgTradesToPass / tradesPerDay  : null;
+  const passRate = evalPassed / simCount;
+  const avgTradesToPass = tradesToPassList.length ? tradesToPassList.reduce((a, b) => a + b, 0) / tradesToPassList.length : null;
+  const avgDaysToPass = avgTradesToPass != null ? avgTradesToPass / tradesPerDay : null;
   const avgWeeksToPass = avgTradesToPass != null ? avgTradesToPass / tradesPerWeek : null;
-
-  const fundedFailRate  = evalPassed > 0 ? fundedFailures / evalPassed : 0;
-  const avgMonthsActive = fundedMonthsActive.length
-    ? fundedMonthsActive.reduce((a, b) => a + b, 0) / fundedMonthsActive.length
-    : 0;
-
-  const upfrontCost           = (firm.costModel === "one_time" ? firm.evalCost : 0) + firm.fundedActivationFee;
-  const monthlyCost           = firm.costModel === "subscription" ? firm.evalCost : 0;
+  const fundedFailRate = evalPassed > 0 ? fundedFailures / evalPassed : 0;
+  const avgMonthsActive = fundedMonthsActive.length ? fundedMonthsActive.reduce((a, b) => a + b, 0) / fundedMonthsActive.length : 0;
+  const upfrontCost = (firm.costModel === "one_time" ? firm.evalCost : 0) + firm.fundedActivationFee;
+  const monthlyCost = firm.costModel === "subscription" ? firm.evalCost : 0;
   const expectedResetsPerYear = fundedFailRate * (12 / Math.max(avgMonthsActive, 1));
-  const totalResetCosts       = expectedResetsPerYear * firm.fundedResetCost;
-
-  // Expected monthly = payout × chance of being funded & not failing
-  const grossMonthly  = avgMonthlyPayout * passRate * (1 - fundedFailRate);
-  const netMonthly    = grossMonthly - monthlyCost - totalResetCosts / 12;
-  const net6m         = grossMonthly * 6  - upfrontCost - monthlyCost * 6  - totalResetCosts * 0.5;
-  const netAnnual     = grossMonthly * 12 - upfrontCost - monthlyCost * 12 - totalResetCosts;
+  const grossMonthly = avgMonthlyPayout * passRate * (1 - fundedFailRate);
+  const netMonthly = grossMonthly - monthlyCost - expectedResetsPerYear * firm.fundedResetCost / 12;
+  const net6m = grossMonthly * 6 - upfrontCost - monthlyCost * 6 - expectedResetsPerYear * firm.fundedResetCost * 0.5;
+  const netAnnual = grossMonthly * 12 - upfrontCost - monthlyCost * 12 - expectedResetsPerYear * firm.fundedResetCost;
   const breakEvenMonths = netMonthly > 0 ? upfrontCost / netMonthly : null;
-
-  return {
-    passRate, failRate: 1 - passRate,
-    avgTradesToPass, avgDaysToPass, avgWeeksToPass,
-    tradesPerWeek, expectancy, scaledExpectancy,
-    fundedFailRate, avgMonthsActive, avgMonthlyPayout,
-    grossMonthlyPnl, tradesPerMonth,
-    upfrontCost, breakEvenMonths, net6m, netAnnual,
-    expectedResetsPerYear,
-  };
+  return { passRate, failRate: 1 - passRate, avgTradesToPass, avgDaysToPass, avgWeeksToPass, tradesPerWeek, fundedFailRate, avgMonthsActive, avgMonthlyPayout, grossMonthlyPnl, tradesPerMonth, upfrontCost, breakEvenMonths, net6m, netAnnual, expectedResetsPerYear };
 }
 
-// ── UI Components ─────────────────────────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────────────────────
 
-function Section({ title, color, open, onToggle, children, D }) {
+function Toggle({ on, onChange, color, D }) {
   return (
-    <div style={{ border: `1px solid ${open ? color : D.border}`, borderRadius: 10, overflow: "hidden" }}>
-      <div onClick={onToggle} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", cursor: "pointer", background: open ? `${color}18` : D.bg, userSelect: "none" }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: open ? color : D.textMuted, textTransform: "uppercase", letterSpacing: "0.08em" }}>{title}</span>
-        <span style={{ color: open ? color : D.textMuted, fontSize: 14 }}>{open ? "▲" : "▼"}</span>
-      </div>
-      {open && <div style={{ padding: "16px 18px", background: D.card }}>{children}</div>}
+    <div onClick={() => onChange(!on)} style={{ width: 38, height: 20, borderRadius: 10, background: on ? color : D.border, cursor: "pointer", position: "relative", flexShrink: 0, transition: "background 0.15s" }}>
+      <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: on ? 21 : 3, transition: "left 0.15s" }} />
     </div>
   );
 }
@@ -218,197 +135,35 @@ function NumField({ label, fkey, value, onChange, inputStyle, labelStyle }) {
   );
 }
 
-// ── Main Export ───────────────────────────────────────────────────────────────
+// ── Edit Modal ────────────────────────────────────────────────────────────────
 
-export default function PropFirm({ stats, design }) {
-  const D = design || C;
-  const rawTrades = useMemo(() => stats?.rawTrades || [], [stats]);
-  const [firms, setFirms]               = useState([]);
-  const [activeTab, setActiveTab]       = useState(0);
-  const [openSections, setOpenSections] = useState({ eval: true, funded: false });
-  const [loading, setLoading]           = useState(true);
-  const [saving, setSaving]             = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState(null);
-  const [hoveredIndex, setHoveredIndex] = useState(null);
-  const saveTimeout = useRef({});
-
-  useEffect(() => {
-    loadPropFirms().then(loaded => {
-      setFirms(loaded.length > 0 ? loaded : [DEFAULT_FIRM(1), DEFAULT_FIRM(2)]);
-      setLoading(false);
-    }).catch(() => {
-      setFirms([DEFAULT_FIRM(1), DEFAULT_FIRM(2)]);
-      setLoading(false);
-    });
-  }, []);
-
-  const autoSave = (updatedFirm) => {
-    const key = updatedFirm._dbId || updatedFirm.id;
-    if (saveTimeout.current[key]) clearTimeout(saveTimeout.current[key]);
-    saveTimeout.current[key] = setTimeout(async () => {
-      setSaving(true);
-      try {
-        if (updatedFirm._dbId) {
-          await updatePropFirm(updatedFirm._dbId, updatedFirm);
-        } else {
-          const saved = await savePropFirm(updatedFirm);
-          setFirms(prev => prev.map(f => f.id === updatedFirm.id ? { ...f, _dbId: saved.id } : f));
-        }
-      } catch (e) { console.error(e); }
-      setSaving(false);
-    }, 1000);
-  };
-
-  const results = useMemo(() => {
-    if (!rawTrades || rawTrades.length === 0) return [];
-    return firms.map(f => simulateFirm(f, rawTrades, 2000));
-  }, [firms, rawTrades]);
-
-  const addFirm = async () => {
-    const newFirm = DEFAULT_FIRM(Date.now());
-    setFirms(prev => [...prev, newFirm]);
-    setActiveTab(firms.length);
-    try {
-      const saved = await savePropFirm(newFirm);
-      setFirms(prev => prev.map(f => f.id === newFirm.id ? { ...f, _dbId: saved.id } : f));
-    } catch (e) { console.error(e); }
-  };
-
-  const removeFirm = async (i) => {
-    if (firms.length <= 1) return;
-    const firm = firms[i];
-    setFirms(firms.filter((_, idx) => idx !== i));
-    setActiveTab(Math.max(0, activeTab - 1));
-    if (firm._dbId) { try { await deletePropFirm(firm._dbId); } catch (e) { console.error(e); } }
-  };
-
-  const reorderFirms = (fromIndex, toIndex) => {
-    const newFirms = [...firms];
-    const [movedFirm] = newFirms.splice(fromIndex, 1);
-    newFirms.splice(toIndex, 0, movedFirm);
-    setFirms(newFirms);
-
-    // Update active tab to follow the moved firm
-    if (activeTab === fromIndex) {
-      setActiveTab(toIndex);
-    } else if (fromIndex < activeTab && toIndex >= activeTab) {
-      setActiveTab(activeTab - 1);
-    } else if (fromIndex > activeTab && toIndex <= activeTab) {
-      setActiveTab(activeTab + 1);
-    }
-  };
-
-  const upd = (key, val) => {
-    const updated = { ...firms[activeTab], [key]: val };
-    setFirms(firms.map((f, idx) => idx === activeTab ? updated : f));
-    autoSave(updated);
-  };
-
-  if (loading) return (
-    <div style={{ color: D.textMuted, padding: 40, textAlign: "center", fontFamily: "monospace" }}>Loading...</div>
-  );
-
-  const f      = firms[activeTab] || firms[0];
-  const COLORS = [D.text, D.textMuted, D.blue, D.green, D.red];
-
-  const fmtUSD = (n) => (!n && n !== 0) ? "—" : n >= 0 ? `+$${Math.round(n).toLocaleString()}` : `-$${Math.abs(Math.round(n)).toLocaleString()}`;
-  const fmtPct = (n) => `${(n * 100).toFixed(1)}%`;
-  const fmtD   = (n) => n ? `${n.toFixed(0)} days` : "—";
+function EditModal({ firm, onUpdate, onClose, D }) {
+  const [f, setF] = useState(firm);
+  const upd = (key, val) => setF(prev => ({ ...prev, [key]: val }));
 
   const inputStyle = { padding: "6px 10px", background: D.bg, border: `1px solid ${D.border}`, borderRadius: 6, color: D.text, fontSize: 13, fontFamily: "monospace", width: "100%" };
   const labelStyle = { fontSize: 11, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 4 };
 
-  const roiData = firms.map((firm, i) => ({
-    name: firm.name,
-    "6 months":  Math.round(results[i]?.net6m    || 0),
-    "12 months": Math.round(results[i]?.netAnnual || 0),
-  }));
-
-  const r = results[activeTab];
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    // Overlay
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 13, color: D.textMuted }}>
-          {rawTrades.length} trades · 2,000 runs
-          {saving && <span style={{ color: D.textMuted, marginLeft: 10 }}>saving...</span>}
+      {/* Modal */}
+      <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 16, width: "min(780px, 95vw)", maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: `1px solid ${D.border}`, flexShrink: 0 }}>
+          <input value={f.name} onChange={e => upd("name", e.target.value)} style={{ ...inputStyle, fontSize: 15, fontWeight: 600, width: "auto", flex: 1, marginRight: 16 }} />
+          <button onClick={onClose} style={{ background: "none", border: "none", color: D.textMuted, cursor: "pointer", fontSize: 20, lineHeight: 1, padding: "0 4px" }}>×</button>
         </div>
-        <button onClick={addFirm} style={{ padding: "8px 18px", background: "transparent", color: D.text, borderRadius: 8, border: `1px solid ${D.border}`, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-          + Add Firm
-        </button>
-      </div>
 
-      {rawTrades.length === 0 && (
-        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: 24, textAlign: "center", color: D.textMuted, fontSize: 13 }}>
-          Add trades in the Data tab first to run simulations.
-        </div>
-      )}
-
-      {/* Firm tabs with drag-and-drop */}
-      <div style={{ display: "flex", gap: 4, background: D.card, padding: 4, borderRadius: 10, width: "fit-content", flexWrap: "wrap" }}>
-        {firms.map((firm, i) => (
-          <button
-            key={firm.id}
-            draggable
-            onDragStart={(e) => {
-              setDraggedIndex(i);
-              e.dataTransfer.effectAllowed = "move";
-            }}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setHoveredIndex(i);
-            }}
-            onDragEnd={() => {
-              setDraggedIndex(null);
-              setHoveredIndex(null);
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (draggedIndex !== null && draggedIndex !== i) {
-                reorderFirms(draggedIndex, i);
-              }
-              setDraggedIndex(null);
-              setHoveredIndex(null);
-            }}
-            onClick={() => setActiveTab(i)}
-            style={{
-              padding: "6px 16px",
-              borderRadius: 8,
-              border: hoveredIndex === i && draggedIndex !== null && draggedIndex !== i
-                ? `2px dashed ${COLORS[i % COLORS.length]}`
-                : "none",
-              cursor: draggedIndex !== null ? "grabbing" : "grab",
-              fontSize: 13,
-              fontWeight: 500,
-              background: activeTab === i ? `${COLORS[i % COLORS.length]}18` : "transparent",
-              color: activeTab === i ? COLORS[i % COLORS.length] : D.textMuted,
-              opacity: draggedIndex === i ? 0.5 : 1,
-              transition: "all 0.15s ease"
-            }}>
-            ⋮⋮ {firm.name}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-
-        {/* Left: Editor */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", gap: 10 }}>
-            <input value={f.name} onChange={e => upd("name", e.target.value)}
-              style={{ ...inputStyle, flex: 1, fontSize: 15, fontWeight: 600 }} />
-            {firms.length > 1 && (
-              <button onClick={() => removeFirm(activeTab)}
-                style={{ padding: "6px 14px", background: "transparent", border: `1px solid ${D.border}`, borderRadius: 6, color: D.red, cursor: "pointer", fontSize: 12 }}>
-                Remove
-              </button>
-            )}
-          </div>
+        {/* Two-column body */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, overflow: "auto", flex: 1 }}>
 
           {/* Evaluation */}
-          <Section title="Evaluation / Challenge" color={D.blue} open={openSections.eval} onToggle={() => setOpenSections(s => ({ ...s, eval: !s.eval }))} D={D}>
+          <div style={{ padding: 24, borderRight: `1px solid ${D.border}` }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: D.blue, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>Evaluation / Challenge</div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
               <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Account Size ($)" fkey="evalAccountSize" value={f.evalAccountSize} />
               <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Profit Target (%)" fkey="evalProfitTarget" value={f.evalProfitTarget} />
@@ -426,10 +181,7 @@ export default function PropFirm({ stats, design }) {
 
             {(f.evalDrawdownType === "trailing" || f.evalDrawdownType === "eod_trailing") && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <div onClick={() => upd("evalTrailingLock", !f.evalTrailingLock)}
-                  style={{ width: 38, height: 20, borderRadius: 10, background: f.evalTrailingLock ? D.blue : D.border, cursor: "pointer", position: "relative", flexShrink: 0 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: f.evalTrailingLock ? 21 : 3, transition: "left 0.15s" }} />
-                </div>
+                <Toggle on={f.evalTrailingLock} onChange={v => upd("evalTrailingLock", v)} color={D.blue} D={D} />
                 <span style={{ fontSize: 12, color: f.evalTrailingLock ? D.blue : D.textMuted }}>Trailing DD locks at starting balance</span>
               </div>
             )}
@@ -438,8 +190,7 @@ export default function PropFirm({ stats, design }) {
               <label style={labelStyle}>Cost Model</label>
               <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                 {[["one_time", "One-time fee"], ["subscription", "Monthly fee"]].map(([val, lbl]) => (
-                  <button key={val} onClick={() => upd("costModel", val)}
-                    style={{ flex: 1, padding: "6px 0", borderRadius: 6, cursor: "pointer", fontSize: 12, border: `1px solid ${f.costModel === val ? D.blue : D.border}`, background: f.costModel === val ? `${D.blue}18` : "transparent", color: f.costModel === val ? D.blue : D.textMuted }}>
+                  <button key={val} onClick={() => upd("costModel", val)} style={{ flex: 1, padding: "6px 0", borderRadius: 6, cursor: "pointer", fontSize: 12, border: `1px solid ${f.costModel === val ? D.blue : D.border}`, background: f.costModel === val ? `${D.blue}18` : "transparent", color: f.costModel === val ? D.blue : D.textMuted }}>
                     {lbl}
                   </button>
                 ))}
@@ -449,33 +200,25 @@ export default function PropFirm({ stats, design }) {
 
             <div style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <div onClick={() => upd("evalTimeLimitEnabled", !f.evalTimeLimitEnabled)}
-                  style={{ width: 38, height: 20, borderRadius: 10, background: f.evalTimeLimitEnabled ? D.blue : D.border, cursor: "pointer", position: "relative", flexShrink: 0 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: f.evalTimeLimitEnabled ? 21 : 3, transition: "left 0.15s" }} />
-                </div>
+                <Toggle on={f.evalTimeLimitEnabled} onChange={v => upd("evalTimeLimitEnabled", v)} color={D.blue} D={D} />
                 <span style={{ fontSize: 12, color: f.evalTimeLimitEnabled ? D.blue : D.textMuted }}>Time Limit</span>
               </div>
-              {f.evalTimeLimitEnabled && (
-                <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Max days to pass" fkey="evalTimeLimitDays" value={f.evalTimeLimitDays} />
-              )}
+              {f.evalTimeLimitEnabled && <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Max days to pass" fkey="evalTimeLimitDays" value={f.evalTimeLimitDays} />}
             </div>
 
             <div style={{ borderTop: `1px solid ${D.border}`, paddingTop: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: f.consistencyEnabled ? 10 : 0 }}>
-                <div onClick={() => upd("consistencyEnabled", !f.consistencyEnabled)}
-                  style={{ width: 38, height: 20, borderRadius: 10, background: f.consistencyEnabled ? D.blue : D.border, cursor: "pointer", position: "relative", flexShrink: 0 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: f.consistencyEnabled ? 21 : 3, transition: "left 0.15s" }} />
-                </div>
+                <Toggle on={f.consistencyEnabled} onChange={v => upd("consistencyEnabled", v)} color={D.blue} D={D} />
                 <span style={{ fontSize: 12, color: f.consistencyEnabled ? D.blue : D.textMuted }}>Consistency Rule</span>
               </div>
-              {f.consistencyEnabled && (
-                <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Max single day % of total profit" fkey="consistencyMaxDayPct" value={f.consistencyMaxDayPct} />
-              )}
+              {f.consistencyEnabled && <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Max single day % of total profit" fkey="consistencyMaxDayPct" value={f.consistencyMaxDayPct} />}
             </div>
-          </Section>
+          </div>
 
           {/* Funded */}
-          <Section title="Funded Account" color={D.blue} open={openSections.funded} onToggle={() => setOpenSections(s => ({ ...s, funded: !s.funded }))} D={D}>
+          <div style={{ padding: 24 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: D.blue, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>Funded Account</div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
               <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Max Drawdown (%)" fkey="fundedMaxDrawdown" value={f.fundedMaxDrawdown} />
               <NumField onChange={upd} inputStyle={inputStyle} labelStyle={labelStyle} label="Daily Loss Limit (%)" fkey="fundedDailyLossLimit" value={f.fundedDailyLossLimit} />
@@ -495,109 +238,182 @@ export default function PropFirm({ stats, design }) {
             </div>
 
             {(f.fundedDrawdownType === "trailing" || f.fundedDrawdownType === "eod_trailing") && (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <div onClick={() => upd("fundedTrailingLock", !f.fundedTrailingLock)}
-                  style={{ width: 38, height: 20, borderRadius: 10, background: f.fundedTrailingLock ? D.blue : D.border, cursor: "pointer", position: "relative", flexShrink: 0 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: f.fundedTrailingLock ? 21 : 3, transition: "left 0.15s" }} />
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Toggle on={f.fundedTrailingLock} onChange={v => upd("fundedTrailingLock", v)} color={D.blue} D={D} />
                 <span style={{ fontSize: 12, color: f.fundedTrailingLock ? D.blue : D.textMuted }}>Trailing DD locks at starting balance</span>
               </div>
             )}
-          </Section>
+          </div>
         </div>
 
-        {/* Right: Results */}
-        {r && rawTrades.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {/* Footer */}
+        <div style={{ padding: "16px 24px", borderTop: `1px solid ${D.border}`, display: "flex", justifyContent: "flex-end", gap: 10, flexShrink: 0 }}>
+          <button onClick={onClose} style={{ padding: "8px 18px", background: "transparent", border: `1px solid ${D.border}`, borderRadius: 8, color: D.textMuted, cursor: "pointer", fontSize: 13 }}>Cancel</button>
+          <button onClick={() => { onUpdate(f); onClose(); }} style={{ padding: "8px 18px", background: D.text, border: "none", borderRadius: 8, color: D.bg, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-            {/* Assumptions card */}
-            <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 18 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: D.textMuted, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>Inputs (scaled to account)</div>
-              {[
-                ["Expectancy (50k base)", `$${r.expectancy.toFixed(2)}`,       D.text],
-                ["Expectancy (scaled)",   `$${r.scaledExpectancy.toFixed(2)}`, r.scaledExpectancy >= 0 ? D.green : D.red],
-                ["Trades / week",         r.tradesPerWeek.toFixed(1),           D.text],
-                ["Trades / month",        r.tradesPerMonth.toFixed(1),          D.text],
-                ["Gross PnL / month",     fmtUSD(r.grossMonthlyPnl),           r.grossMonthlyPnl >= 0 ? D.green : D.red],
-              ].map(([k, v, c]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${D.border}`, fontSize: 13 }}>
-                  <span style={{ color: D.textMuted }}>{k}</span>
-                  <span style={{ fontFamily: "monospace", fontWeight: 600, color: c }}>{v}</span>
-                </div>
-              ))}
-            </div>
+// ── Main ──────────────────────────────────────────────────────────────────────
 
-            <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 18 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: D.blue, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>Evaluation</div>
-              {[
-                ["Pass Rate",          fmtPct(r.passRate),                                           r.passRate > 0.5 ? D.green : D.red],
-                ["Fail Rate",          fmtPct(r.failRate),                                           D.red],
-                ["Avg trades to pass", r.avgTradesToPass != null ? Math.round(r.avgTradesToPass).toString() : "—", D.text],
-                ["Avg days to pass",   fmtD(r.avgDaysToPass),                                        D.text],
-                ["Avg weeks to pass",  r.avgWeeksToPass != null ? r.avgWeeksToPass.toFixed(1) : "—", D.text],
-                ["Upfront cost",       `$${r.upfrontCost.toLocaleString()}`,                         D.textMuted],
-              ].map(([k, v, c]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${D.border}`, fontSize: 13 }}>
-                  <span style={{ color: D.textMuted }}>{k}</span>
-                  <span style={{ fontFamily: "monospace", fontWeight: 600, color: c }}>{v}</span>
-                </div>
-              ))}
-            </div>
+export default function PropFirm({ stats, design }) {
+  const D = design || C;
+  const rawTrades = useMemo(() => stats?.rawTrades || [], [stats]);
+  const [firms, setFirms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editingFirm, setEditingFirm] = useState(null);
+  const saveTimeout = useRef({});
 
-            <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 18 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: D.textMuted, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>Funded</div>
-              {[
-                ["Funded fail rate",    fmtPct(r.fundedFailRate),                                    r.fundedFailRate > 0.3 ? D.red : D.textMuted],
-                ["Avg months active",   r.avgMonthsActive ? `${r.avgMonthsActive.toFixed(1)} mo` : "—", D.text],
-                ["Avg payout / month",  fmtUSD(r.avgMonthlyPayout),                                  D.green],
-                ["Expected resets/year",r.expectedResetsPerYear.toFixed(1),                           D.red],
-              ].map(([k, v, c]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${D.border}`, fontSize: 13 }}>
-                  <span style={{ color: D.textMuted }}>{k}</span>
-                  <span style={{ fontFamily: "monospace", fontWeight: 600, color: c }}>{v}</span>
-                </div>
-              ))}
-            </div>
+  useEffect(() => {
+    loadPropFirms().then(loaded => {
+      setFirms(loaded.length > 0 ? loaded : [DEFAULT_FIRM(1), DEFAULT_FIRM(2)]);
+      setLoading(false);
+    }).catch(() => { setFirms([DEFAULT_FIRM(1), DEFAULT_FIRM(2)]); setLoading(false); });
+  }, []);
 
-            <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 18 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: D.textMuted, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>ROI (after all costs)</div>
-              {[
-                ["Break-even",          r.breakEvenMonths ? `${r.breakEvenMonths.toFixed(1)} mo` : "—", D.blue],
-                ["Expected profit 6m",  fmtUSD(r.net6m),    r.net6m    > 0 ? D.green : D.red],
-                ["Expected profit 12m", fmtUSD(r.netAnnual), r.netAnnual > 0 ? D.green : D.red],
-              ].map(([k, v, c]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${D.border}`, fontSize: 13 }}>
-                  <span style={{ color: D.textMuted }}>{k}</span>
-                  <span style={{ fontFamily: "monospace", fontWeight: 600, color: c }}>{v}</span>
+  const results = useMemo(() => {
+    if (!rawTrades?.length) return [];
+    return firms.map(f => simulateFirm(f, rawTrades, 2000));
+  }, [firms, rawTrades]);
+
+  const autoSave = (updatedFirm) => {
+    const key = updatedFirm._dbId || updatedFirm.id;
+    if (saveTimeout.current[key]) clearTimeout(saveTimeout.current[key]);
+    saveTimeout.current[key] = setTimeout(async () => {
+      setSaving(true);
+      try {
+        if (updatedFirm._dbId) { await updatePropFirm(updatedFirm._dbId, updatedFirm); }
+        else { const saved = await savePropFirm(updatedFirm); setFirms(prev => prev.map(f => f.id === updatedFirm.id ? { ...f, _dbId: saved.id } : f)); }
+      } catch (e) { console.error(e); }
+      setSaving(false);
+    }, 600);
+  };
+
+  const addFirm = async () => {
+    const nf = DEFAULT_FIRM(Date.now());
+    setFirms(prev => [...prev, nf]);
+    try { const saved = await savePropFirm(nf); setFirms(prev => prev.map(f => f.id === nf.id ? { ...f, _dbId: saved.id } : f)); } catch (e) { console.error(e); }
+  };
+
+  const removeFirm = async (i) => {
+    if (firms.length <= 1) return;
+    const firm = firms[i];
+    setFirms(firms.filter((_, idx) => idx !== i));
+    if (firm._dbId) { try { await deletePropFirm(firm._dbId); } catch (e) { console.error(e); } }
+  };
+
+  const handleUpdate = (updated) => {
+    setFirms(prev => prev.map(f => f.id === updated.id ? updated : f));
+    autoSave(updated);
+  };
+
+  if (loading) return <div style={{ color: D.textMuted, padding: 40, textAlign: "center" }}>Loading...</div>;
+
+  const fmtUSD = n => (!n && n !== 0) ? "—" : n >= 0 ? `+$${Math.round(n).toLocaleString()}` : `-$${Math.abs(Math.round(n)).toLocaleString()}`;
+  const fmtPct = n => `${(n * 100).toFixed(1)}%`;
+  const fmtD   = n => n ? `${n.toFixed(0)}d` : "—";
+
+  const roiData = firms.map((firm, i) => ({
+    name: firm.name,
+    "6 months":  Math.round(results[i]?.net6m    || 0),
+    "12 months": Math.round(results[i]?.netAnnual || 0),
+  }));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* Edit Modal */}
+      {editingFirm && (
+        <EditModal
+          firm={editingFirm} D={D}
+          onUpdate={handleUpdate}
+          onClose={() => setEditingFirm(null)}
+        />
+      )}
+
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 13, color: D.textMuted }}>
+          {rawTrades.length} trades · 2,000 runs
+          {saving && <span style={{ color: D.textMuted, marginLeft: 10 }}>saving...</span>}
+        </div>
+        <button onClick={addFirm} style={{ padding: "8px 18px", background: "transparent", border: `1px solid ${D.border}`, borderRadius: 8, color: D.text, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+          + Add Firm
+        </button>
+      </div>
+
+      {rawTrades.length === 0 && (
+        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: 24, textAlign: "center", color: D.textMuted, fontSize: 13 }}>
+          Add trades in the Data tab first to run simulations.
+        </div>
+      )}
+
+      {/* Firm cards — name on left, stats on right */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {firms.map((firm, i) => {
+          const r = results[i];
+          return (
+            <div key={firm.id} style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", gap: 20 }}>
+
+              {/* Name + actions */}
+              <div style={{ minWidth: 160, flexShrink: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: D.text, marginBottom: 6 }}>{firm.name}</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setEditingFirm(firm)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: `1px solid ${D.border}`, background: "transparent", color: D.textMuted, cursor: "pointer" }}>Edit</button>
+                  {firms.length > 1 && <button onClick={() => removeFirm(i)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: `1px solid ${D.border}`, background: "transparent", color: D.red, cursor: "pointer" }}>Remove</button>}
                 </div>
-              ))}
+              </div>
+
+              {/* Divider */}
+              <div style={{ width: 1, height: 48, background: D.border, flexShrink: 0 }} />
+
+              {/* Stats */}
+              {r && rawTrades.length > 0 ? (
+                <div style={{ display: "flex", gap: 0, flex: 1, flexWrap: "wrap" }}>
+                  {[
+                    ["Pass Rate",      fmtPct(r.passRate),       r.passRate > 0.5 ? D.green : D.red],
+                    ["Fail Rate",      fmtPct(r.failRate),       D.red],
+                    ["Avg to pass",    fmtD(r.avgDaysToPass),    D.text],
+                    ["Funded fail",    fmtPct(r.fundedFailRate), r.fundedFailRate > 0.3 ? D.red : D.textMuted],
+                    ["Avg payout/mo",  fmtUSD(r.avgMonthlyPayout), r.avgMonthlyPayout > 0 ? D.green : D.red],
+                    ["Months active",  r.avgMonthsActive ? `${r.avgMonthsActive.toFixed(1)}mo` : "—", D.text],
+                    ["Cost",           `$${r.upfrontCost.toLocaleString()}`, D.textMuted],
+                  ].map(([label, value, color], idx, arr) => (
+                    <div key={label} style={{ flex: "1 1 auto", padding: "4px 16px", borderRight: idx < arr.length - 1 ? `1px solid ${D.border}` : "none", minWidth: 80 }}>
+                      <div style={{ fontSize: 10, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "monospace" }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: D.textMuted, fontSize: 13 }}>Add trades to see results</div>
+              )}
             </div>
-          </div>
-        ) : (
-          <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 40, textAlign: "center", color: D.textMuted, fontSize: 13 }}>
-            Add trades in the Data tab to run simulations.
-          </div>
-        )}
+          );
+        })}
       </div>
 
       {/* Comparison */}
       {firms.length > 1 && results.filter(Boolean).length > 1 && rawTrades.length > 0 && (
         <>
-          <div style={{ fontSize: 13, fontWeight: 600, color: D.text, marginTop: 8 }}>Comparison</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: D.text, marginTop: 4 }}>Comparison</div>
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(firms.length, 4)}, 1fr)`, gap: 14 }}>
             {firms.map((firm, i) => {
-              const res = results[i];
-              if (!res) return null;
+              const r = results[i];
+              if (!r) return null;
               return (
-                <div key={firm.id} style={{ background: D.card, borderRadius: 10, padding: 16, borderTop: `3px solid ${COLORS[i % COLORS.length]}` }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: COLORS[i % COLORS.length], marginBottom: 10 }}>{firm.name}</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: res.passRate > 0.5 ? D.green : D.red }}>{fmtPct(res.passRate)}</div>
+                <div key={firm.id} style={{ background: D.card, borderRadius: 10, padding: 16, borderTop: `2px solid ${D.border}` }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: D.text, marginBottom: 10 }}>{firm.name}</div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: r.passRate > 0.5 ? D.green : D.red }}>{fmtPct(r.passRate)}</div>
                   <div style={{ fontSize: 11, color: D.textMuted, marginBottom: 10 }}>pass rate</div>
                   {[
-                    ["12m net",     fmtUSD(res.netAnnual),  res.netAnnual > 0 ? D.green : D.red],
-                    ["Break-even",  res.breakEvenMonths ? `${res.breakEvenMonths.toFixed(1)} mo` : "—", D.blue],
-                    ["Cost",        `$${res.upfrontCost.toLocaleString()}`, D.textMuted],
-                    ["Funded fail", fmtPct(res.fundedFailRate), D.red],
+                    ["12m net",     fmtUSD(r.netAnnual),  r.netAnnual > 0 ? D.green : D.red],
+                    ["Break-even",  r.breakEvenMonths ? `${r.breakEvenMonths.toFixed(1)} mo` : "—", D.text],
+                    ["Cost",        `$${r.upfrontCost.toLocaleString()}`, D.textMuted],
+                    ["Funded fail", fmtPct(r.fundedFailRate), D.red],
                   ].map(([k, v, c]) => (
                     <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0", borderBottom: `1px solid ${D.border}` }}>
                       <span style={{ color: D.textMuted }}>{k}</span>
@@ -610,8 +426,8 @@ export default function PropFirm({ stats, design }) {
           </div>
 
           <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: D.text }}>Expected Net Profit Comparison</div>
-            <ResponsiveContainer width="100%" height={240}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: D.text }}>Expected Net Profit</div>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={roiData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke={D.border} horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: D.textMuted }} tickFormatter={v => `$${Math.round(v / 1000)}k`} />
@@ -619,7 +435,7 @@ export default function PropFirm({ stats, design }) {
                 <Tooltip contentStyle={{ background: D.card, border: "none", borderRadius: 8, fontSize: 12 }} formatter={v => [`$${Math.round(v).toLocaleString()}`, ""]} />
                 <ReferenceLine x={0} stroke={D.border} />
                 <Bar dataKey="6 months"  fill={D.blue}  radius={[0, 4, 4, 0]} />
-                <Bar dataKey="12 months" fill={D.green} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="12 months" fill={D.text}  radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
