@@ -4,10 +4,17 @@ import { BACKGROUNDS } from "../constants.jsx";
 const STORAGE_KEY = "trading_dashboard_design";
 
 export const DEFAULT_DESIGN = {
-  bg: "#0a0a0f", card: "#111118", border: "#1e1e2a", sidebar: "#0d0d14",
-  green: "#10e8a0", red: "#ff4d6d", blue: "#818cf8",
-  purple: "#a78bfa", yellow: "#fbbf24",
-  text: "#f1f1f3", textMuted: "#52525b",
+  bg:        "#0a0a0a",
+  card:      "#141414",
+  border:    "#272727",
+  sidebar:   "#111111",
+  green:     "#10e8a0",  // win — stays colored
+  red:       "#ff4d6d",  // loss — stays colored
+  blue:      "#d4d4d4",  // accent / active → light gray
+  purple:    "#d4d4d4",  // same as blue (synced)
+  yellow:    "#888888",  // break-even → mid gray
+  text:      "#f5f5f5",
+  textMuted: "#525252",
   background: "none",
 };
 
