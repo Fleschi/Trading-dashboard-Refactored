@@ -1,7 +1,7 @@
 import { GlowCard } from "../utils/ui";
 import { fmt } from "../utils/calculations";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Equity Curve ─────────────────────────────────────────────────────────────
 
@@ -65,6 +65,12 @@ function CalendarView({ trades, D }) {
     if (!trades?.length) return new Date();
     return new Date([...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0].date);
   });
+useEffect(() => {
+    if (trades?.length) {
+      const newestTrade = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      setViewDate(new Date(newestTrade.date));
+    }
+  }, [trades]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
