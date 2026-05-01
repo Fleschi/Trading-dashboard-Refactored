@@ -8,8 +8,8 @@ import ModuleContent    from "./components/ModuleContent";
 import Settings         from "./modules/Settings";
 import PageBackground   from "./components/PageBackground";
 
-const FONT      = "'DM Sans', system-ui, sans-serif";
-const NAV_H     = 60; // px — height of the sticky top nav
+const FONT  = "'DM Sans', system-ui, sans-serif";
+const NAV_H = 60;
 
 export default function App() {
   const { backTrades, setBackTrades, fwdTrades, setFwdTrades, backStats, loading, error } = useTradeData();
@@ -63,7 +63,11 @@ export default function App() {
           <div style={{ fontSize: 15, fontWeight: 700, color: D.text }}>
             {globalTab === "settings" ? "Settings" : (modules.find(m => m.id === tab)?.label || "")}
           </div>
-          <ModeToggle mode={mode} onSwitch={switchMode} D={D} />
+          <div className="lg-mode">
+            {[["backtesting", "Back"], ["forward", "Live"]].map(([m, label]) => (
+              <button key={m} className={`lg-mode-btn${mode === m ? " active" : ""}`} onClick={() => switchMode(m)}>{label}</button>
+            ))}
+          </div>
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: 16, paddingBottom: BOTTOM_NAV_H + 16 }}>
@@ -91,115 +95,67 @@ export default function App() {
       <GlobalStyles design={D} />
       <PageBackground design={D} />
 
-      {/* Floating top nav — fixed height so content area is exact */}
+      {/* Top nav */}
       <div
+        style={{
+          height: NAV_H, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "0 24px", position: "relative", zIndex: 20,
+        }}
         onMouseEnter={() => setNavHovered(true)}
         onMouseLeave={() => setNavHovered(false)}
-        style={{
-          height: NAV_H,
-          flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "0 24px",
-          position: "relative", zIndex: 20,
-        }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <ModeToggle mode={mode} onSwitch={switchMode} D={D} />
+        {/* Liquid glass shell */}
+        <div className="lg-shell">
 
-          <Divider D={D} />
+          {/* Mode toggle */}
+          <div className="lg-mode">
+            {[["backtesting", "Back"], ["forward", "Live"]].map(([m, label]) => (
+              <button key={m} className={`lg-mode-btn${mode === m ? " active" : ""}`} onClick={() => switchMode(m)}>{label}</button>
+            ))}
+          </div>
 
+          <div className="lg-divider" />
+
+          {/* Module tabs */}
           {modules.map(m => {
             const isActive = globalTab !== "settings" && tab === m.id;
-            return <NavTab key={m.id} m={m} isActive={isActive} expanded={navHovered} D={D} onClick={() => setTab(m.id)} />;
+            return (
+              <button
+                key={m.id}
+                className={`lg-btn${isActive ? " active" : ""}`}
+                onClick={() => setTab(m.id)}
+                title={m.label}
+              >
+                <NavIcon path={m.icon} />
+                {navHovered && <span>{m.label}</span>}
+              </button>
+            );
           })}
 
-          <Divider D={D} />
+          <div className="lg-divider" />
 
-          <NavTab
-            m={SETTINGS_MODULE}
-            isActive={globalTab === "settings"}
-            expanded={navHovered}
-            D={D}
+          {/* Settings */}
+          <button
+            className={`lg-btn${globalTab === "settings" ? " active" : ""}`}
             onClick={() => setTab("settings")}
-          />
+            title={SETTINGS_MODULE.label}
+          >
+            <NavIcon path={SETTINGS_MODULE.icon} />
+            {navHovered && <span>{SETTINGS_MODULE.label}</span>}
+          </button>
+
         </div>
       </div>
 
-      {/* Content — fills exact remaining viewport, scrolls internally */}
-      <div style={{
-        flex: 1,
-        overflowY: "auto",
-        position: "relative", zIndex: 1,
-      }}>
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1 }}>
         <div style={{ padding: "16px 28px 28px", height: "100%", boxSizing: "border-box" }}>
           <div style={{ maxWidth: 1200, margin: "0 auto", height: "100%" }}>
             {content}
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ─── NavTab ───────────────────────────────────────────────────────────────────
-
-function NavTab({ m, isActive, expanded, D, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      title={m.label}
-      style={{
-        display: "flex", alignItems: "center", gap: 6,
-        height: 36,
-        padding: expanded ? "0 14px" : "0 9px",
-        justifyContent: "center",
-        borderRadius: 999,
-        border: `1px solid ${isActive ? D.blue + "60" : D.border}`,
-        background: isActive ? `${D.blue}18` : `${D.card}cc`,
-        backdropFilter: "blur(12px)",
-        cursor: "pointer",
-        color: isActive ? D.blue : D.textMuted,
-        fontSize: 12, fontWeight: isActive ? 600 : 400,
-        transition: "background 0.2s, border-color 0.2s, color 0.2s, padding 0.22s cubic-bezier(0.4,0,0.2,1)",
-        whiteSpace: "nowrap",
-        flexShrink: 0,
-        boxShadow: isActive
-          ? `0 0 0 1px ${D.blue}20, 0 2px 8px rgba(0,0,0,0.12)`
-          : "0 2px 8px rgba(0,0,0,0.08)",
-      }}
-    >
-      <NavIcon path={m.icon} />
-      {expanded && <span style={{ fontSize: 12 }}>{m.label}</span>}
-    </button>
-  );
-}
-
-// ─── Divider ─────────────────────────────────────────────────────────────────
-
-function Divider({ D }) {
-  return <div style={{ width: 1, height: 18, background: D.border, margin: "0 6px", opacity: 0.6 }} />;
-}
-
-// ─── ModeToggle ───────────────────────────────────────────────────────────────
-
-function ModeToggle({ mode, onSwitch, D }) {
-  return (
-    <div style={{
-      display: "flex", borderRadius: 999, padding: 2, gap: 2,
-      border: `1px solid ${D.border}`, background: `${D.card}cc`,
-      backdropFilter: "blur(12px)",
-    }}>
-      {[["backtesting", "Back"], ["forward", "Live"]].map(([m, label]) => (
-        <button key={m} onClick={() => onSwitch(m)} style={{
-          padding: "4px 12px", borderRadius: 999, border: "none", cursor: "pointer",
-          fontSize: 11, fontWeight: 600,
-          background: mode === m ? D.blue : "transparent",
-          color: mode === m ? "#fff" : D.textMuted,
-          transition: "all 0.15s",
-        }}>
-          {label}
-        </button>
-      ))}
     </div>
   );
 }
