@@ -144,7 +144,7 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: D.text }}>
             New Trade
-            <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: mode === "backtesting" ? "#1e3a5f" : "#052e1c", color: mode === "backtesting" ? "#4da6ff" : "#00e5a0", marginLeft: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: `${D.border}40`, color: D.textMuted, marginLeft: 6 }}>
               {mode === "backtesting" ? "Backtesting" : "Forward Testing"}
             </span>
           </div>
@@ -156,17 +156,17 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 20 }}>
           <div>
-            <label style={labelStyle}>Date & Time </label>
+            <label style={labelStyle}>Date & Time (DD/MM/YY HH:MM)</label>
             <input type="text" value={form.date}
               onChange={e => inp("date", formatDateInput(e.target.value))}
               maxLength={14} style={{ ...inputStyle, fontFamily: "monospace" }} />
           </div>
           <div>
-            <label style={labelStyle}>Risk-Reward </label>
+            <label style={labelStyle}>Risk-Reward (R)</label>
             <input type="number" step="0.1" value={form.rr} onChange={e => inp("rr", e.target.value)} style={inputStyle} />
           </div>
           <div>
-            <label style={labelStyle}>PnL </label>
+            <label style={labelStyle}>PnL ($)</label>
             <input type="number" value={form.pnl} onChange={e => inp("pnl", e.target.value)}
               style={{ ...inputStyle, borderColor: form.pnl !== "" ? (parseFloat(form.pnl) > 0 ? D.green : parseFloat(form.pnl) < 0 ? D.red : D.yellow) : D.border }} />
           </div>

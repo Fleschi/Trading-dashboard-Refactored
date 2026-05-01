@@ -309,7 +309,7 @@ export default function PropFirm({ stats, design }) {
   );
 
   const f      = firms[activeTab] || firms[0];
-  const COLORS = [D.green, D.blue, D.yellow, "#a78bfa", "#fb923c"];
+  const COLORS = [D.text, D.textMuted, D.blue, D.green, D.red];
 
   const fmtUSD = (n) => (!n && n !== 0) ? "—" : n >= 0 ? `+$${Math.round(n).toLocaleString()}` : `-$${Math.abs(Math.round(n)).toLocaleString()}`;
   const fmtPct = (n) => `${(n * 100).toFixed(1)}%`;
@@ -509,6 +509,24 @@ export default function PropFirm({ stats, design }) {
         {/* Right: Results */}
         {r && rawTrades.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+            {/* Assumptions card */}
+            <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 18 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: D.textMuted, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>Inputs (scaled to account)</div>
+              {[
+                ["Expectancy (50k base)", `$${r.expectancy.toFixed(2)}`,       D.text],
+                ["Expectancy (scaled)",   `$${r.scaledExpectancy.toFixed(2)}`, r.scaledExpectancy >= 0 ? D.green : D.red],
+                ["Trades / week",         r.tradesPerWeek.toFixed(1),           D.text],
+                ["Trades / month",        r.tradesPerMonth.toFixed(1),          D.text],
+                ["Gross PnL / month",     fmtUSD(r.grossMonthlyPnl),           r.grossMonthlyPnl >= 0 ? D.green : D.red],
+              ].map(([k, v, c]) => (
+                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${D.border}`, fontSize: 13 }}>
+                  <span style={{ color: D.textMuted }}>{k}</span>
+                  <span style={{ fontFamily: "monospace", fontWeight: 600, color: c }}>{v}</span>
+                </div>
+              ))}
+            </div>
+
             <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 10, padding: 18 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: D.blue, marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>Evaluation</div>
               {[

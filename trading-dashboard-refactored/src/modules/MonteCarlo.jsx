@@ -128,7 +128,7 @@ export default function MonteCarlo({ stats, design }) {
           const active = simWeeks === w;
           return (
             <button key={w} onClick={() => setSimWeeks(w)}
-              style={{ padding: "4px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12, border: `1px solid ${active ? D.green : D.border}`, background: active ? `${D.green}18` : "transparent", color: active ? D.green : D.textMuted }}>
+              style={{ padding: "4px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12, border: `1px solid ${active ? D.blue : D.border}`, background: active ? `${D.blue}15` : "transparent", color: active ? D.text : D.textMuted }}>
               {label}
             </button>
           );
