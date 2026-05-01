@@ -157,7 +157,7 @@ export default function Overview({ stats, design: D }) {
   const statItems = [
     { label: "Total PnL",     value: fmt(stats.totalPnl),    color: stats.totalPnl >= 0 ? D.green : D.red },
     { label: "Win Rate",      value: stats.winRate > 0 ? `${(stats.winRate * 100).toFixed(0)}%` : "—", color: D.text },
-    { label: "Avg RR",        value: stats.avgRR > 0 ? `${stats.avgRR.toFixed(2)}R` : "—", color: D.text },
+    { label: "Avg RR",        value: stats.avgRR > 0 ? `${stats.avgRR.toFixed(2)}` : "—", color: D.text },
     { label: "Trades / Week", value: stats.avgTradesPerWeek > 0 ? stats.avgTradesPerWeek.toFixed(1) : "—", color: D.text },
     { label: "Expectancy",    value: fmt(stats.expectancy),  color: stats.expectancy >= 0 ? D.green : D.red },
     { label: "Max Drawdown",  value: fmt(stats.mdd),         color: D.red },
