@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { BACKGROUNDS } from "../constants.jsx";
 
 const STORAGE_KEY = "trading_dashboard_design";

@@ -1,4 +1,4 @@
-import { GlowCard, StatCard } from "../utils/ui";
+import { GlowCard } from "../utils/ui";
 import { fmt } from "../utils/calculations";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useState } from "react";
