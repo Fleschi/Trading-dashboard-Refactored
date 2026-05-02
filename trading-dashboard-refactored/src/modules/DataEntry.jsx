@@ -39,9 +39,6 @@ function SmartDateInput({ parts, onChange, inputStyle }) {
     (parts.hh||"__") + ":" +
     (parts.mn||"__");
 
-  // Derive which segment cursor is in based on raw digit count
-  const rawDigits = [parts.dd, parts.mm, parts.yy, parts.hh, parts.mn]
-    .map(s => s || "").join("");
 
   const handleKeyDown = (e) => {
     if (e.key === "Backspace") {
