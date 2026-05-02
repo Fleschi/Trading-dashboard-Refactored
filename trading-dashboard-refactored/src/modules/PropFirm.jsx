@@ -351,46 +351,65 @@ export default function PropFirm({ stats, design }) {
         </div>
       )}
 
-      {/* Firm cards — name on left, stats on right */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Firm table — single grid so ALL dividers align perfectly */}
+      <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, overflow: "hidden" }}>
+
+        {/* Header row */}
+        <div style={{ display: "grid", gridTemplateColumns: "180px 1px 1fr 1fr 1fr 1fr 1fr 1fr 1fr 80px", alignItems: "center", padding: "10px 20px", borderBottom: `1px solid ${D.border}`, background: D.bg }}>
+          <div />
+          <div />
+          {["Pass Rate","Fail Rate","Avg to pass","Funded fail","Avg payout/mo","Months active","Cost"].map(label => (
+            <div key={label} style={{ fontSize: 10, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 600, padding: "0 16px" }}>{label}</div>
+          ))}
+          <div />
+        </div>
+
+        {/* One row per firm */}
         {firms.map((firm, i) => {
           const r = results[i];
-          return (
-            <div key={firm.id} style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", gap: 20 }}>
+          const stats = r && rawTrades.length > 0 ? [
+            [fmtPct(r.passRate),                                        r.passRate > 0.5 ? D.green : D.red],
+            [fmtPct(r.failRate),                                        D.red],
+            [fmtD(r.avgDaysToPass),                                     D.text],
+            [fmtPct(r.fundedFailRate),                                  r.fundedFailRate > 0.3 ? D.red : D.textMuted],
+            [fmtUSD(r.avgMonthlyPayout),                                r.avgMonthlyPayout > 0 ? D.green : D.red],
+            [r.avgMonthsActive ? `${r.avgMonthsActive.toFixed(1)}mo` : "—", D.text],
+            [`$${r.upfrontCost.toLocaleString()}`,                      D.textMuted],
+          ] : null;
 
+          return (
+            <div key={firm.id} style={{
+              display: "grid",
+              gridTemplateColumns: "180px 1px 1fr 1fr 1fr 1fr 1fr 1fr 1fr 80px",
+              alignItems: "center",
+              borderBottom: i < firms.length - 1 ? `1px solid ${D.border}` : "none",
+              padding: "0 20px",
+            }}>
               {/* Name + actions */}
-              <div style={{ minWidth: 160, flexShrink: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: D.text, marginBottom: 6 }}>{firm.name}</div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => setEditingFirm(firm)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: `1px solid ${D.border}`, background: "transparent", color: D.textMuted, cursor: "pointer" }}>Edit</button>
-                  {firms.length > 1 && <button onClick={() => removeFirm(i)} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, border: `1px solid ${D.border}`, background: "transparent", color: D.red, cursor: "pointer" }}>Remove</button>}
+              <div style={{ padding: "14px 0" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: D.text, marginBottom: 5 }}>{firm.name}</div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => setEditingFirm(firm)} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, border: `1px solid ${D.border}`, background: "transparent", color: D.textMuted, cursor: "pointer" }}>Edit</button>
+                  {firms.length > 1 && <button onClick={() => removeFirm(i)} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, border: `1px solid ${D.border}`, background: "transparent", color: D.red, cursor: "pointer" }}>Remove</button>}
                 </div>
               </div>
 
-              {/* Divider */}
-              <div style={{ width: 1, height: 48, background: D.border, flexShrink: 0 }} />
+              {/* Vertical separator */}
+              <div style={{ height: 40, background: D.border }} />
 
-              {/* Stats */}
-              {r && rawTrades.length > 0 ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", flex: 1 }}>
-                  {[
-                    ["Pass Rate",      fmtPct(r.passRate),       r.passRate > 0.5 ? D.green : D.red],
-                    ["Fail Rate",      fmtPct(r.failRate),       D.red],
-                    ["Avg to pass",    fmtD(r.avgDaysToPass),    D.text],
-                    ["Funded fail",    fmtPct(r.fundedFailRate), r.fundedFailRate > 0.3 ? D.red : D.textMuted],
-                    ["Avg payout/mo",  fmtUSD(r.avgMonthlyPayout), r.avgMonthlyPayout > 0 ? D.green : D.red],
-                    ["Months active",  r.avgMonthsActive ? `${r.avgMonthsActive.toFixed(1)}mo` : "—", D.text],
-                    ["Cost",           `$${r.upfrontCost.toLocaleString()}`, D.textMuted],
-                  ].map(([label, value, color], idx, arr) => (
-                    <div key={label} style={{ padding: "4px 16px", borderRight: idx < arr.length - 1 ? `1px solid ${D.border}` : "none" }}>
-                      <div style={{ fontSize: 10, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, whiteSpace: "nowrap" }}>{label}</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "monospace", whiteSpace: "nowrap" }}>{value}</div>
-                    </div>
-                  ))}
+              {/* Stat cells */}
+              {stats ? stats.map(([value, color], idx) => (
+                <div key={idx} style={{ padding: "14px 16px", borderRight: idx < stats.length - 1 ? `1px solid ${D.border}` : "none" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "monospace" }}>{value}</div>
                 </div>
-              ) : (
-                <div style={{ color: D.textMuted, fontSize: 13 }}>Add trades to see results</div>
+              )) : (
+                <div style={{ gridColumn: "span 7", padding: "14px 16px", color: D.textMuted, fontSize: 13 }}>
+                  Add trades to see results
+                </div>
               )}
+
+              {/* Empty last col spacer */}
+              <div />
             </div>
           );
         })}
