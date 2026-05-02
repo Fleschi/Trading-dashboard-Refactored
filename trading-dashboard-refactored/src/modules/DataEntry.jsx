@@ -4,67 +4,90 @@ import { C } from "../utils/ui";
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
-const convertDate = (parts) => {
-  const { dd, mm, yy, hh, min } = parts;
+const SEGMENTS = [
+  { key: "dd", len: 2, placeholder: "DD" },
+  { key: "mm", len: 2, placeholder: "MM" },
+  { key: "yy", len: 2, placeholder: "YY" },
+  { key: "hh", len: 2, placeholder: "HH" },
+  { key: "mn", len: 2, placeholder: "MM" },
+];
+
+const convertDate = ({ dd, mm, yy, hh, mn }) => {
   if (!dd || !mm || !yy) return null;
-  return `20${yy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}T${hh||"00"}:${min||"00"}`;
+  return `20${yy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}T${hh||"00"}:${mn||"00"}`;
 };
 
 const isoToParts = (iso) => {
-  if (!iso) return { dd:"", mm:"", yy:"", hh:"", min:"" };
-  const [datePart, timePart=""] = iso.split("T");
-  const [y,m,d] = datePart.split("-");
-  const [hh="",mn=""] = timePart.split(":");
-  return { dd: d||"", mm: m||"", yy: (y||"").slice(2), hh: hh.slice(0,2), min: mn.slice(0,2) };
+  if (!iso) return { dd:"", mm:"", yy:"", hh:"", mn:"" };
+  const [datePart="", timePart=""] = iso.split("T");
+  const [y="",m="",d=""] = datePart.split("-");
+  const [hh="",mn2=""] = timePart.split(":");
+  return { dd: d.slice(0,2), mm: m.slice(0,2), yy: y.slice(2,4), hh: hh.slice(0,2), mn: mn2.slice(0,2) };
 };
 
-
+const EMPTY_PARTS = () => ({ dd:"", mm:"", yy:"", hh:"", mn:"" });
 
 // ─── SmartDateInput ───────────────────────────────────────────────────────────
-// Each segment (DD / MM / YY / HH / MM) is its own 2-char input.
-// Backspace only affects the current segment, no shift bleeding.
+// Single visual input, but internally treats each segment (DD/MM/YY/HH/MM)
+// independently so backspace only erases within the current segment.
 
-function SmartDateInput({ parts, onChange, inputBase }) {
-  const seg = (key, placeholder, label) => (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-      <input
-        type="text" inputMode="numeric" maxLength={2}
-        placeholder={placeholder}
-        value={parts[key]}
-        onChange={e => {
-          const val = e.target.value.replace(/\D/g,"").slice(0,2);
-          onChange({ ...parts, [key]: val });
-        }}
-        style={{ ...inputBase, width: 36, textAlign: "center", padding: "8px 4px", fontSize: 14 }}
-      />
-      <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-    </div>
-  );
+function SmartDateInput({ parts, onChange, inputStyle }) {
+  const display =
+    (parts.dd||"__") + "/" +
+    (parts.mm||"__") + "/" +
+    (parts.yy||"__") + " " +
+    (parts.hh||"__") + ":" +
+    (parts.mn||"__");
 
-  const sep = (char) => <span style={{ color: "#555", fontSize: 14, alignSelf: "flex-start", paddingTop: 10 }}>{char}</span>;
+  // Derive which segment cursor is in based on raw digit count
+  const rawDigits = [parts.dd, parts.mm, parts.yy, parts.hh, parts.mn]
+    .map(s => s || "").join("");
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      // Find last non-empty segment and remove its last char
+      const newParts = { ...parts };
+      for (let i = SEGMENTS.length - 1; i >= 0; i--) {
+        const { key } = SEGMENTS[i];
+        if (newParts[key] && newParts[key].length > 0) {
+          newParts[key] = newParts[key].slice(0, -1);
+          onChange(newParts);
+          return;
+        }
+      }
+    }
+  };
+
+  const handleInput = (e) => {
+    const digits = e.target.value.replace(/\D/g, "");
+    // Re-distribute digits across segments
+    const newParts = { dd:"", mm:"", yy:"", hh:"", mn:"" };
+    let pos = 0;
+    for (const { key, len } of SEGMENTS) {
+      newParts[key] = digits.slice(pos, pos + len);
+      pos += len;
+      if (pos >= digits.length) break;
+    }
+    onChange(newParts);
+  };
 
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 4 }}>
-      {seg("dd", "DD", "day")}
-      {sep("/")}
-      {seg("mm", "MM", "mon")}
-      {sep("/")}
-      {seg("yy", "YY", "year")}
-      {sep(" ")}
-      {seg("hh", "HH", "hour")}
-      {sep(":")}
-      {seg("min", "MM", "min")}
-    </div>
+    <input
+      type="text"
+      value={display}
+      onChange={handleInput}
+      onKeyDown={handleKeyDown}
+      style={{ ...inputStyle, fontFamily: "monospace", letterSpacing: "0.05em" }}
+    />
   );
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-const EMPTY_TRADE_PARTS = () => ({ dd:"", mm:"", yy:"", hh:"", min:"", rr:"", pnl:"" });
-
 export default function DataEntry({ trades, onTradesChange, design, mode = "backtesting" }) {
   const D = design || C;
-  const [form, setForm]       = useState(EMPTY_TRADE_PARTS());
+  const [form, setForm]       = useState({ ...EMPTY_PARTS(), rr:"", pnl:"" });
   const [saving, setSaving]   = useState(false);
   const [sortCol, setSortCol] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
@@ -72,10 +95,9 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
   const [filterOutcome, setFilterOutcome] = useState("all");
   const [showFilter, setShowFilter]       = useState(false);
   const [editId, setEditId]   = useState(null);
-  const [editForm, setEditForm] = useState(EMPTY_TRADE_PARTS());
+  const [editForm, setEditForm] = useState({ ...EMPTY_PARTS(), rr:"", pnl:"" });
 
-  const inputBase = { background: D.bg, border: `1px solid ${D.border}`, borderRadius: 8, color: D.text, fontFamily: "monospace", outline: "none" };
-  const inputStyle = { ...inputBase, padding: "8px 12px", fontSize: 13, width: "100%" };
+  const inputStyle = { padding: "8px 12px", background: D.bg, border: `1px solid ${D.border}`, borderRadius: 8, color: D.text, fontSize: 13, width: "100%", outline: "none" };
   const labelStyle = { fontSize: 11, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 4 };
   const outcomeColor = pnl => pnl > 0 ? D.green : pnl < 0 ? D.red : D.yellow;
   const outcomeLabel = pnl => pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "BE";
@@ -95,7 +117,7 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
         saved = await saveTrade({ date: isoDate, pnl, rr, mode });
       }
       onTradesChange(prev => [...prev, { date: isoDate, pnl, rr, id: saved.id }].sort((a,b) => new Date(a.date) - new Date(b.date)));
-      setForm(EMPTY_TRADE_PARTS());
+      setForm({ ...EMPTY_PARTS(), rr:"", pnl:"" });
     } catch (e) { console.error(e); }
     setSaving(false);
   };
@@ -107,15 +129,14 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
     if (!selected.size) return;
     try { await Promise.all([...selected].map(id => deleteTrade(id))); onTradesChange(prev => prev.filter(t => !selected.has(t.id))); setSelected(new Set()); } catch (e) { console.error(e); }
   };
-  const startEdit = (t) => { setEditId(t.id); setEditForm(isoToParts(t.date)); };
+  const startEdit = (t) => { setEditId(t.id); setEditForm({ ...isoToParts(t.date), rr: t.rr||"", pnl: t.pnl||"" }); };
   const saveEdit = async () => {
     try {
       const isoDate = convertDate(editForm);
       const pnl = parseFloat(editForm.pnl) || 0;
       const rr  = parseFloat(editForm.rr)  || 0;
-      const updated = { date: isoDate, pnl, rr };
-      await updateTrade(editId, updated);
-      onTradesChange(prev => prev.map(t => t.id === editId ? { ...t, ...updated } : t));
+      await updateTrade(editId, { date: isoDate, pnl, rr });
+      onTradesChange(prev => prev.map(t => t.id === editId ? { ...t, date: isoDate, pnl, rr } : t));
       setEditId(null);
     } catch (e) { console.error(e); }
   };
@@ -141,7 +162,7 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
     else setSelected(prev => { const n = new Set(prev); allVisibleIds.forEach(id => n.add(id)); return n; });
   };
 
-  // Grid: checkbox | date | RR | PnL | Outcome | actions
+  // checkbox | date | RR | PnL | Outcome | actions
   const COLS = "32px 2fr 1fr 1fr 1fr 72px";
 
   return (
@@ -158,11 +179,10 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
           </div>
           <button onClick={exportCSV} disabled={!trades.length} style={{ padding: "8px 16px", background: "transparent", border: `1px solid ${D.border}`, borderRadius: 8, color: D.textMuted, cursor: "pointer", fontSize: 13 }}>Export CSV</button>
         </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr 1fr", gap: 20, alignItems: "end", marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
           <div>
-            <label style={labelStyle}>Date & Time</label>
-            <SmartDateInput parts={form} onChange={setForm} inputBase={inputBase} />
+            <label style={labelStyle}>Date & Time (DD/MM/YY HH:MM)</label>
+            <SmartDateInput parts={form} onChange={p => setForm(f => ({...f, ...p}))} inputStyle={inputStyle} />
           </div>
           <div>
             <label style={labelStyle}>Risk-Reward</label>
@@ -174,7 +194,6 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
               style={{ ...inputStyle, borderColor: form.pnl !== "" ? outcomeColor(parseFloat(form.pnl)) : D.border }} />
           </div>
         </div>
-
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <button onClick={submit} disabled={saving || form.pnl === ""} style={{ padding: "10px 28px", background: D.text, color: D.bg, borderRadius: 8, border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: (saving || form.pnl === "") ? 0.4 : 1 }}>
             {saving ? "Saving..." : "Add Trade"}
@@ -216,7 +235,6 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
       {/* Trade list */}
       {trades.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, overflow: "hidden" }}>
-
           {/* Header */}
           <div style={{ display: "grid", gridTemplateColumns: COLS, alignItems: "center", padding: "10px 16px", borderBottom: `1px solid ${D.border}`, background: D.bg }}>
             <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer", accentColor: D.text }} />
@@ -236,9 +254,9 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
             const isSelected = selected.has(t.id);
 
             if (isEditing) return (
-              <div key={t.id || i} style={{ display: "grid", gridTemplateColumns: COLS, alignItems: "center", padding: "8px 16px", borderBottom: `1px solid ${D.border}`, background: `${D.border}20`, gap: 8, borderLeft: `3px solid ${color}` }}>
+              <div key={t.id || i} style={{ display: "grid", gridTemplateColumns: COLS, alignItems: "center", padding: "8px 16px", borderBottom: `1px solid ${D.border}`, background: `${D.border}20`, gap: 8 }}>
                 <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(t.id)} style={{ cursor: "pointer", accentColor: D.text }} />
-                <SmartDateInput parts={editForm} onChange={p => setEditForm(f => ({...f, ...p}))} inputBase={inputBase} />
+                <SmartDateInput parts={editForm} onChange={p => setEditForm(f => ({...f, ...p}))} inputStyle={{ ...inputStyle, padding: "4px 8px", fontSize: 12 }} />
                 <input type="number" step="0.1" value={editForm.rr} onChange={e => setEditForm(f => ({...f, rr: e.target.value}))} style={{ ...inputStyle, padding: "4px 8px", fontSize: 12 }} />
                 <input type="number" value={editForm.pnl} onChange={e => setEditForm(f => ({...f, pnl: e.target.value}))} style={{ ...inputStyle, padding: "4px 8px", fontSize: 12 }} />
                 <div style={{ fontSize: 12, fontWeight: 700, color: outcomeColor(parseFloat(editForm.pnl)) }}>{outcomeLabel(parseFloat(editForm.pnl))}</div>
@@ -250,7 +268,13 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
             );
 
             return (
-              <div key={t.id || i} style={{ display: "grid", gridTemplateColumns: COLS, alignItems: "center", padding: "0 16px", borderBottom: i < sorted.length - 1 ? `1px solid ${D.border}` : "none", background: isSelected ? `${D.border}30` : "transparent", borderLeft: `3px solid ${color}`, transition: "background 0.1s" }}>
+              <div key={t.id || i} style={{
+                display: "grid", gridTemplateColumns: COLS,
+                alignItems: "center", padding: "0 16px",
+                borderBottom: i < sorted.length - 1 ? `1px solid ${D.border}` : "none",
+                background: isSelected ? `${D.border}30` : "transparent",
+                transition: "background 0.1s",
+              }}>
                 <div style={{ padding: "13px 0" }} onClick={() => toggleSelect(t.id)}>
                   <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(t.id)} style={{ cursor: "pointer", accentColor: D.text }} />
                 </div>
