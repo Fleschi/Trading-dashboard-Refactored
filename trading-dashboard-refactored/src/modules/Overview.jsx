@@ -1,4 +1,4 @@
-import { GlowCard } from "../utils/ui";
+import { GlowCard, StatCard } from "../utils/ui";
 import { fmt } from "../utils/calculations";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useState } from "react";
@@ -28,7 +28,7 @@ function EquityCurve({ stats, D }) {
     return (
       <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 12 }}>
         <div style={{ color: D.textMuted, marginBottom: 2 }}>Trade #{d.index}</div>
-        <div style={{ color: accent, fontWeight: 600 }}>{d.equity >= 0 ? "" : ""}{fmt(d.equity)}</div>
+        <div style={{ color: accent, fontWeight: 600 }}>{d.equity >= 0 ? "+" : ""}{fmt(d.equity)}</div>
       </div>
     );
   };
@@ -63,7 +63,10 @@ function EquityCurve({ stats, D }) {
 function CalendarView({ trades, D }) {
   const [viewDate, setViewDate] = useState(() => {
     if (!trades?.length) return new Date();
-    return new Date([...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0].date);
+    // Always open on the month of the most recent trade
+    const latest = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0].date;
+    const d = new Date(latest);
+    return isNaN(d) ? new Date() : d;
   });
 
   const year = viewDate.getFullYear();
@@ -157,7 +160,7 @@ export default function Overview({ stats, design: D }) {
   const statItems = [
     { label: "Total PnL",     value: fmt(stats.totalPnl),    color: stats.totalPnl >= 0 ? D.green : D.red },
     { label: "Win Rate",      value: stats.winRate > 0 ? `${(stats.winRate * 100).toFixed(0)}%` : "—", color: D.text },
-    { label: "Avg RR",        value: stats.avgRR > 0 ? `${stats.avgRR.toFixed(2)}` : "—", color: D.text },
+    { label: "Avg RR",        value: stats.avgRR > 0 ? `${stats.avgRR.toFixed(2)}R` : "—", color: D.text },
     { label: "Trades / Week", value: stats.avgTradesPerWeek > 0 ? stats.avgTradesPerWeek.toFixed(1) : "—", color: D.text },
     { label: "Expectancy",    value: fmt(stats.expectancy),  color: stats.expectancy >= 0 ? D.green : D.red },
     { label: "Max Drawdown",  value: fmt(stats.mdd),         color: D.red },

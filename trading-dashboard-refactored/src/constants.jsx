@@ -38,88 +38,51 @@ export const BACKGROUNDS = [
     render: () => null,
   },
   {
-    id: "grid-dark",
-    label: "Grid",
-    preview: () => ({
-      background: "#0a0a0f",
-      backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px)",
-      backgroundSize: "40px 40px",
-    }),
-    render: (D) => (
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
-        background: D.bg,
-        backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px)",
-        backgroundSize: "40px 40px",
-      }} />
-    ),
-  },
-  {
-    id: "grid-glow",
-    label: "Grid + Glow",
-    preview: () => ({
-      background: "#0a0a0f",
-      backgroundImage: "linear-gradient(rgba(129,140,248,0.06) 1px, transparent 1px), linear-gradient(to right, rgba(129,140,248,0.06) 1px, transparent 1px)",
-      backgroundSize: "40px 40px",
-    }),
-    render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          background: D.bg,
-          backgroundImage: `linear-gradient(${D.purple}09 1px, transparent 1px), linear-gradient(to right, ${D.purple}09 1px, transparent 1px)`,
-          backgroundSize: "40px 40px",
-        }} />
-        <div style={{
-          position: "absolute", inset: 0,
-          background: `radial-gradient(ellipse 80% 50% at 50% -20%, ${D.purple}22, transparent)`,
-        }} />
-      </div>
-    ),
-  },
-  {
-    id: "dots",
-    label: "Dots",
-    preview: () => ({
-      background: "#0a0a0f",
-      backgroundImage: "radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)",
-      backgroundSize: "24px 24px",
-    }),
-    render: (D) => (
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
-        background: D.bg,
-        backgroundImage: `radial-gradient(${D.blue}18 1px, transparent 1px)`,
-        backgroundSize: "24px 24px",
-      }} />
-    ),
-  },
-  {
     id: "radial",
     label: "Radial",
-    preview: () => ({
-      background: "radial-gradient(circle at 70% 20%, #1a0a2e, #0a0a0f 60%)",
+    preview: (bg, rc="#a78bfa") => ({
+      background: `radial-gradient(circle at 80% 20%, ${rc}55, transparent 60%), ${bg}`,
     }),
     render: (D) => (
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
-        background: `radial-gradient(circle 800px at 100% 200px, ${D.purple}28, transparent), radial-gradient(circle 600px at 0% 80%, ${D.blue}18, transparent), ${D.bg}`,
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+        background: `radial-gradient(circle 800px at 100% 200px, ${D.radialColor||"#a78bfa"}28, transparent), radial-gradient(circle 600px at 0% 80%, ${D.radialColor||"#a78bfa"}12, transparent), ${D.bg}`,
       }} />
     ),
   },
   {
-    id: "noise",
-    label: "Noise",
-    preview: () => ({ background: "#0a0a0f" }),
+    id: "radial-top",
+    label: "Radial Top",
+    preview: (bg, rc="#a78bfa") => ({
+      background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${rc}55, transparent 70%), ${bg}`,
+    }),
     render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
-        <div style={{ position: "absolute", inset: 0, background: D.bg }} />
-        <div style={{
-          position: "absolute", inset: 0, opacity: 0.4,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
-          backgroundSize: "200px 200px",
-        }} />
-      </div>
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+        background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${D.radialColor||"#a78bfa"}28, transparent 70%), ${D.bg}`,
+      }} />
+    ),
+  },
+  {
+    id: "radial-dual",
+    label: "Dual Radial",
+    preview: (bg, rc="#a78bfa") => ({
+      background: `radial-gradient(circle at 20% 80%, ${rc}45, transparent 50%), radial-gradient(circle at 80% 20%, ${rc}35, transparent 50%), ${bg}`,
+    }),
+    render: (D) => (
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+        background: `radial-gradient(circle 700px at 15% 85%, ${D.radialColor||"#a78bfa"}22, transparent), radial-gradient(circle 700px at 85% 15%, ${D.radialColor||"#a78bfa"}18, transparent), ${D.bg}`,
+      }} />
+    ),
+  },
+  {
+    id: "radial-center",
+    label: "Center Glow",
+    preview: (bg, rc="#a78bfa") => ({
+      background: `radial-gradient(ellipse 70% 50% at 50% 50%, ${rc}40, transparent 70%), ${bg}`,
+    }),
+    render: (D) => (
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+        background: `radial-gradient(ellipse 70% 50% at 50% 50%, ${D.radialColor||"#a78bfa"}18, transparent 70%), ${D.bg}`,
+      }} />
     ),
   },
 ];
