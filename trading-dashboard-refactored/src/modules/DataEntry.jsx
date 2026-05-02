@@ -18,7 +18,7 @@ const isoToParts = (iso) => {
   return { dd: d||"", mm: m||"", yy: (y||"").slice(2), hh: hh.slice(0,2), min: mn.slice(0,2) };
 };
 
-const EMPTY_TRADE = () => ({ dd:"", mm:"", yy:"", hh:"", min:"", rr:"", pnl:"" });
+
 
 // ─── SmartDateInput ───────────────────────────────────────────────────────────
 // Each segment (DD / MM / YY / HH / MM) is its own 2-char input.
