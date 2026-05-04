@@ -47,12 +47,23 @@ function Textarea({ value, onChange, D }) {
   );
 }
 
-function AttachButton({ label, file, onFile, onClear, D, uploading }) {
+/**
+ * AttachButton — shows either:
+ *  1. A saved URL (existingUrl) as a persisted image with option to replace
+ *  2. A newly selected local File object as a local preview
+ *  3. An upload button if neither exists
+ */
+function AttachButton({ label, file, existingUrl, onFile, onClear, D, uploading }) {
   const ref = useRef();
-  const preview = file ? URL.createObjectURL(file) : null;
+
+  // Local blob preview takes priority over saved URL
+  const localPreview = file ? URL.createObjectURL(file) : null;
+  const displaySrc = localPreview || existingUrl || null;
+  const isLocal = !!localPreview;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {!preview ? (
+      {!displaySrc ? (
         <button type="button" onClick={() => ref.current.click()} style={{
           padding: "7px 16px", borderRadius: 8, border: `1px solid ${D.border}`,
           background: "transparent", color: D.textMuted, fontSize: 12, cursor: "pointer",
@@ -62,12 +73,57 @@ function AttachButton({ label, file, onFile, onClear, D, uploading }) {
         </button>
       ) : (
         <div style={{ position: "relative", display: "inline-block" }}>
-          <img src={preview} alt={label} style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 8, border: `1px solid ${D.border}`, display: "block", cursor: "pointer", objectFit: "contain" }} onClick={() => window.open(preview, "_blank")} />
-          <button type="button" onClick={onClear} style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.75)", border: "none", borderRadius: "50%", width: 24, height: 24, color: "#fff", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+          <img
+            src={displaySrc}
+            alt={label}
+            style={{
+              maxWidth: "100%", maxHeight: 220, borderRadius: 8,
+              border: `1px solid ${D.border}`, display: "block",
+              cursor: "pointer", objectFit: "contain",
+            }}
+            onClick={() => window.open(displaySrc, "_blank")}
+          />
+          {/* Badge: shows whether this is the saved version or a new file */}
+          <span style={{
+            position: "absolute", bottom: 6, left: 6,
+            background: isLocal ? "rgba(255,180,0,0.85)" : "rgba(0,180,80,0.85)",
+            color: "#fff", fontSize: 10, fontWeight: 700,
+            padding: "2px 7px", borderRadius: 4,
+          }}>
+            {isLocal ? "New (unsaved)" : "Saved"}
+          </span>
+          {/* Replace button */}
+          <button
+            type="button"
+            onClick={() => ref.current.click()}
+            style={{
+              position: "absolute", top: 6, left: 6,
+              background: "rgba(0,0,0,0.65)", border: "none", borderRadius: 6,
+              color: "#fff", cursor: "pointer", fontSize: 10, padding: "3px 8px",
+            }}
+          >
+            Replace
+          </button>
+          {/* Clear button — only removes the local file; saved URL is preserved unless replaced */}
+          <button
+            type="button"
+            onClick={onClear}
+            style={{
+              position: "absolute", top: 6, right: 6,
+              background: "rgba(0,0,0,0.75)", border: "none", borderRadius: "50%",
+              width: 24, height: 24, color: "#fff", cursor: "pointer",
+              fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            ×
+          </button>
         </div>
       )}
       {uploading && <span style={{ fontSize: 11, color: D.textMuted }}>Uploading…</span>}
-      <input ref={ref} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) onFile(f); e.target.value = ""; }} />
+      <input
+        ref={ref} type="file" accept="image/*" style={{ display: "none" }}
+        onChange={e => { const f = e.target.files[0]; if (f) onFile(f); e.target.value = ""; }}
+      />
     </div>
   );
 }
@@ -102,13 +158,25 @@ function EntryCard({ entry, D, onDelete, onEdit }) {
               {entry.screenshot_htf_url && (
                 <div>
                   <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Daily Bias</div>
-                  <img src={entry.screenshot_htf_url} alt="HTF" style={{ width: "100%", borderRadius: 8, border: `1px solid ${D.border}`, cursor: "pointer" }} onClick={() => window.open(entry.screenshot_htf_url, "_blank")} />
+                  <img
+                    src={entry.screenshot_htf_url}
+                    alt="HTF"
+                    style={{ width: "100%", borderRadius: 8, border: `1px solid ${D.border}`, cursor: "pointer" }}
+                    onClick={() => window.open(entry.screenshot_htf_url, "_blank")}
+                    onError={e => { e.target.style.display = "none"; }}
+                  />
                 </div>
               )}
               {entry.screenshot_exec_url && (
                 <div>
                   <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Execution</div>
-                  <img src={entry.screenshot_exec_url} alt="Exec" style={{ width: "100%", borderRadius: 8, border: `1px solid ${D.border}`, cursor: "pointer" }} onClick={() => window.open(entry.screenshot_exec_url, "_blank")} />
+                  <img
+                    src={entry.screenshot_exec_url}
+                    alt="Exec"
+                    style={{ width: "100%", borderRadius: 8, border: `1px solid ${D.border}`, cursor: "pointer" }}
+                    onClick={() => window.open(entry.screenshot_exec_url, "_blank")}
+                    onError={e => { e.target.style.display = "none"; }}
+                  />
                 </div>
               )}
             </div>
@@ -148,7 +216,18 @@ function EntryCard({ entry, D, onDelete, onEdit }) {
   );
 }
 
-const emptyForm = () => ({ datetime: "", type: "", alongHTF: "", wentGood: "", wentWrong: "", keyTakeaway: "", fileHTF: null, fileExec: null });
+const emptyForm = () => ({
+  datetime: "",
+  type: "",
+  alongHTF: "",
+  wentGood: "",
+  wentWrong: "",
+  keyTakeaway: "",
+  fileHTF: null,      // new File selected by user
+  fileExec: null,     // new File selected by user
+  existingHTFUrl: null,   // already saved URL from DB
+  existingExecUrl: null,  // already saved URL from DB
+});
 
 export default function TradeNotebook({ design }) {
   const D = design;
@@ -163,13 +242,27 @@ export default function TradeNotebook({ design }) {
   const [error, setError] = useState(null);
 
   const startEdit = (entry) => {
-    setForm({ datetime: entry.time_entered || "", type: entry.type || "", alongHTF: entry.along_htf || "", wentGood: entry.went_good || "", wentWrong: entry.went_wrong || "", keyTakeaway: entry.key_takeaway || "", fileHTF: null, fileExec: null });
+    setForm({
+      datetime: entry.time_entered || "",
+      type: entry.type || "",
+      alongHTF: entry.along_htf || "",
+      wentGood: entry.went_good || "",
+      wentWrong: entry.went_wrong || "",
+      keyTakeaway: entry.key_takeaway || "",
+      fileHTF: null,
+      fileExec: null,
+      // Preserve existing saved URLs so they show as preview and aren't lost on save
+      existingHTFUrl: entry.screenshot_htf_url || null,
+      existingExecUrl: entry.screenshot_exec_url || null,
+    });
     setEditingId(entry.id);
     setShowForm(true);
   };
 
   useEffect(() => {
-    loadNotebookEntries().then(data => { setEntries(data); setLoading(false); }).catch(e => { setError(e.message); setLoading(false); });
+    loadNotebookEntries()
+      .then(data => { setEntries(data); setLoading(false); })
+      .catch(e => { setError(e.message); setLoading(false); });
   }, []);
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
@@ -187,12 +280,38 @@ export default function TradeNotebook({ design }) {
 
   const submit = async () => {
     if (!form.datetime) return;
-    setSaving(true); setError(null);
+    setSaving(true);
+    setError(null);
+
     try {
-      let screenshotHTFUrl = null, screenshotExecUrl = null;
-      if (form.fileHTF) { setUploadingHTF(true); screenshotHTFUrl = await uploadNotebookScreenshot(form.fileHTF, "htf"); setUploadingHTF(false); }
-      if (form.fileExec) { setUploadingExec(true); screenshotExecUrl = await uploadNotebookScreenshot(form.fileExec, "exec"); setUploadingExec(false); }
-      const payload = { time_entered: form.datetime, type: form.type, along_htf: form.alongHTF, went_good: form.wentGood, went_wrong: form.wentWrong, key_takeaway: form.keyTakeaway, screenshot_htf_url: screenshotHTFUrl, screenshot_exec_url: screenshotExecUrl };
+      // Upload new files if selected — otherwise fall back to existing saved URLs
+      let screenshotHTFUrl = form.existingHTFUrl;
+      let screenshotExecUrl = form.existingExecUrl;
+
+      if (form.fileHTF) {
+        setUploadingHTF(true);
+        screenshotHTFUrl = await uploadNotebookScreenshot(form.fileHTF, "htf");
+        setUploadingHTF(false);
+      }
+      if (form.fileExec) {
+        setUploadingExec(true);
+        screenshotExecUrl = await uploadNotebookScreenshot(form.fileExec, "exec");
+        setUploadingExec(false);
+      }
+
+      const payload = {
+        time_entered: form.datetime,
+        type: form.type,
+        along_htf: form.alongHTF,
+        went_good: form.wentGood,
+        went_wrong: form.wentWrong,
+        key_takeaway: form.keyTakeaway,
+        // Only include screenshot fields that have a value so updateNotebookEntry
+        // can skip them if undefined (preserves DB value unchanged)
+        ...(screenshotHTFUrl !== undefined && { screenshot_htf_url: screenshotHTFUrl }),
+        ...(screenshotExecUrl !== undefined && { screenshot_exec_url: screenshotExecUrl }),
+      };
+
       if (editingId) {
         const updated = await updateNotebookEntry(editingId, payload);
         setEntries(prev => prev.map(e => e.id === editingId ? updated : e));
@@ -200,9 +319,17 @@ export default function TradeNotebook({ design }) {
         const saved = await saveNotebookEntry(payload);
         setEntries(prev => [saved, ...prev]);
       }
-      setForm(emptyForm()); setEditingId(null); setShowForm(false);
-    } catch (e) { setError(e.message); }
-    finally { setSaving(false); setUploadingHTF(false); setUploadingExec(false); }
+
+      setForm(emptyForm());
+      setEditingId(null);
+      setShowForm(false);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+      setUploadingHTF(false);
+      setUploadingExec(false);
+    }
   };
 
   if (loading) return <div style={{ padding: 48, textAlign: "center", color: D.textMuted, fontSize: 13 }}>Loading…</div>;
@@ -211,12 +338,19 @@ export default function TradeNotebook({ design }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontSize: 12, color: D.textMuted }}>{entries.length} entries</div>
-        <button onClick={() => { setShowForm(s => !s); setError(null); }} style={{ padding: "9px 20px", borderRadius: 10, border: `1px solid ${D.border}`, background: "transparent", color: showForm ? D.textMuted : D.text, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+        <button
+          onClick={() => { setShowForm(s => !s); if (showForm) { setEditingId(null); setForm(emptyForm()); } setError(null); }}
+          style={{ padding: "9px 20px", borderRadius: 10, border: `1px solid ${D.border}`, background: "transparent", color: showForm ? D.textMuted : D.text, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+        >
           {showForm ? "Cancel" : "+ New Entry"}
         </button>
       </div>
 
-      {error && <div style={{ background: `${D.red}12`, border: `1px solid ${D.red}30`, borderRadius: 10, padding: "10px 16px", fontSize: 12, color: D.red }}>{error}</div>}
+      {error && (
+        <div style={{ background: `${D.red}12`, border: `1px solid ${D.red}30`, borderRadius: 10, padding: "10px 16px", fontSize: 12, color: D.red }}>
+          {error}
+        </div>
+      )}
 
       {showForm && (
         <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
@@ -242,8 +376,28 @@ export default function TradeNotebook({ design }) {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <Field label="Daily Bias"><AttachButton label="Attach screenshot" file={form.fileHTF} onFile={f => set("fileHTF", f)} onClear={() => set("fileHTF", null)} uploading={uploadingHTF} D={D} /></Field>
-            <Field label="Execution"><AttachButton label="Attach screenshot" file={form.fileExec} onFile={f => set("fileExec", f)} onClear={() => set("fileExec", null)} uploading={uploadingExec} D={D} /></Field>
+            <Field label="Daily Bias">
+              <AttachButton
+                label="Attach screenshot"
+                file={form.fileHTF}
+                existingUrl={form.existingHTFUrl}
+                onFile={f => set("fileHTF", f)}
+                onClear={() => set("fileHTF", null)}
+                uploading={uploadingHTF}
+                D={D}
+              />
+            </Field>
+            <Field label="Execution">
+              <AttachButton
+                label="Attach screenshot"
+                file={form.fileExec}
+                existingUrl={form.existingExecUrl}
+                onFile={f => set("fileExec", f)}
+                onClear={() => set("fileExec", null)}
+                uploading={uploadingExec}
+                D={D}
+              />
+            </Field>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -251,13 +405,29 @@ export default function TradeNotebook({ design }) {
             <Field label="What went wrong"><Textarea value={form.wentWrong} onChange={e => set("wentWrong", e.target.value)} D={D} /></Field>
           </div>
 
-          <Field label="Key Takeaway"><Textarea value={form.keyTakeaway} onChange={e => set("keyTakeaway", e.target.value)} D={D} /></Field>
+          <Field label="Key Takeaway">
+            <Textarea value={form.keyTakeaway} onChange={e => set("keyTakeaway", e.target.value)} D={D} />
+          </Field>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button onClick={submit} disabled={!form.datetime || saving} style={{ padding: "10px 28px", borderRadius: 10, border: `1px solid ${D.border}`, background: form.datetime && !saving ? D.text : "transparent", color: form.datetime && !saving ? D.bg : D.textMuted, fontSize: 14, fontWeight: 600, cursor: form.datetime && !saving ? "pointer" : "default" }}>
-              {saving ? "Saving…" : "Save Entry"}
+            <button
+              onClick={submit}
+              disabled={!form.datetime || saving}
+              style={{
+                padding: "10px 28px", borderRadius: 10, border: `1px solid ${D.border}`,
+                background: form.datetime && !saving ? D.text : "transparent",
+                color: form.datetime && !saving ? D.bg : D.textMuted,
+                fontSize: 14, fontWeight: 600,
+                cursor: form.datetime && !saving ? "pointer" : "default",
+              }}
+            >
+              {saving ? "Saving…" : editingId ? "Update Entry" : "Save Entry"}
             </button>
-            {saving && <span style={{ fontSize: 12, color: D.textMuted }}>{uploadingHTF ? "Uploading HTF…" : uploadingExec ? "Uploading execution…" : "Saving…"}</span>}
+            {saving && (
+              <span style={{ fontSize: 12, color: D.textMuted }}>
+                {uploadingHTF ? "Uploading HTF…" : uploadingExec ? "Uploading execution…" : "Saving…"}
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -268,10 +438,16 @@ export default function TradeNotebook({ design }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {entries.map(e => (
-          <EntryCard key={e.id} entry={e} D={D} onEdit={startEdit} onDelete={async (id) => {
-            try { await deleteNotebookEntry(id); setEntries(prev => prev.filter(x => x.id !== id)); }
-            catch (e) { setError(e.message); }
-          }} />
+          <EntryCard
+            key={e.id}
+            entry={e}
+            D={D}
+            onEdit={startEdit}
+            onDelete={async (id) => {
+              try { await deleteNotebookEntry(id); setEntries(prev => prev.filter(x => x.id !== id)); }
+              catch (e) { setError(e.message); }
+            }}
+          />
         ))}
       </div>
     </div>

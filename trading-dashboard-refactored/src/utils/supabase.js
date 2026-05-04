@@ -8,9 +8,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // Parse "DD/MM/YY-DD/MM/YY" or "DD/MM/YY" → sortable number YYYYMMDD
 function parseWeekDate(weekStr) {
   if (!weekStr) return 0;
-  // Take only the first part before "-"
   const first = weekStr.split("-")[0].trim();
-  // Match DD/MM/YY or DD/MM/YYYY
   const parts = first.split("/");
   if (parts.length === 3) {
     const day = parseInt(parts[0]);
@@ -258,6 +256,7 @@ export async function deleteForwardTrade(id) {
   const { error } = await supabase.from("forward_trades").delete().eq("id", id);
   if (error) throw error;
 }
+
 // ── Notebook Entries ──────────────────────────────────────────────────────────
 
 export async function loadNotebookEntries() {
@@ -291,18 +290,28 @@ export async function saveNotebookEntry(entry) {
 }
 
 export async function updateNotebookEntry(id, entry) {
+  // Build update object — only include screenshot fields if they have a value.
+  // This prevents overwriting existing URLs when no new file was selected during edit.
+  const updates = {
+    time_entered: entry.time_entered,
+    type: entry.type,
+    along_htf: entry.along_htf,
+    went_good: entry.went_good,
+    went_wrong: entry.went_wrong,
+    key_takeaway: entry.key_takeaway,
+  };
+
+  // Only update screenshot URLs when a new file was actually uploaded
+  if (entry.screenshot_htf_url !== undefined) {
+    updates.screenshot_htf_url = entry.screenshot_htf_url;
+  }
+  if (entry.screenshot_exec_url !== undefined) {
+    updates.screenshot_exec_url = entry.screenshot_exec_url;
+  }
+
   const { data, error } = await supabase
     .from("notebook_entries")
-    .update({
-      time_entered: entry.time_entered,
-      type: entry.type,
-      along_htf: entry.along_htf,
-      went_good: entry.went_good,
-      went_wrong: entry.went_wrong,
-      key_takeaway: entry.key_takeaway,
-      screenshot_htf_url: entry.screenshot_htf_url || null,
-      screenshot_exec_url: entry.screenshot_exec_url || null,
-    })
+    .update(updates)
     .eq("id", id)
     .select()
     .single();
@@ -320,19 +329,33 @@ export async function deleteNotebookEntry(id) {
   if (error) throw error;
 }
 
+/**
+ * Uploads a notebook screenshot to Supabase Storage and returns the permanent public URL.
+ *
+ * IMPORTANT: The "journal-screenshots" bucket must be set to PUBLIC in Supabase:
+ *   Storage → journal-screenshots → Edit bucket → Toggle "Public bucket" ON
+ *
+ * getPublicUrl() returns a permanent URL (no expiry) — but only works if the bucket is public.
+ */
 export async function uploadNotebookScreenshot(file, slot) {
   const ext = file.name.split(".").pop();
-  const path = `notebook/${slot}-${Date.now()}.${ext}`;
+  const filename = `${slot}-${Date.now()}.${ext}`;
+  const path = `notebook/${filename}`;
 
-  const { error } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from("journal-screenshots")
-    .upload(path, file, { upsert: true });
+    .upload(path, file, { upsert: true, contentType: file.type });
 
-  if (error) throw error;
+  if (uploadError) throw uploadError;
 
+  // getPublicUrl is permanent — no expiry — as long as bucket is public
   const { data } = supabase.storage
     .from("journal-screenshots")
     .getPublicUrl(path);
+
+  if (!data?.publicUrl) {
+    throw new Error("Could not get public URL. Make sure the 'journal-screenshots' bucket is set to Public in Supabase Storage.");
+  }
 
   return data.publicUrl;
 }
