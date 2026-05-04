@@ -122,11 +122,8 @@ export async function loadTrades(mode = "backtesting") {
   return data.map(row => ({
     id: row.id,
     date: row.date,
-    asset: row.asset,
-    outcome: row.outcome,
     rr: row.rr || 0,
     pnl: row.pnl,
-    tradeType: row.trade_type,
     mode: row.mode || "backtesting",
   }));
 }
@@ -134,11 +131,8 @@ export async function loadTrades(mode = "backtesting") {
 export async function saveTrade(trade) {
   const { data, error } = await supabase.from("trades").insert([{
     date: trade.date,
-    asset: trade.asset,
-    outcome: trade.outcome,
     rr: trade.rr || 0,
     pnl: trade.pnl,
-    trade_type: trade.tradeType,
     mode: trade.mode || "backtesting",
   }]).select();
   if (error) throw error;
@@ -153,11 +147,8 @@ export async function deleteTrade(id) {
 export async function saveTrades(trades, mode = "backtesting") {
   const rows = trades.map(t => ({
     date: t.date,
-    asset: t.asset,
-    outcome: t.outcome,
     rr: t.rr || 0,
     pnl: t.pnl,
-    trade_type: t.tradeType,
     mode: t.mode || mode,
   }));
   const { error } = await supabase.from("trades").insert(rows);
@@ -167,7 +158,6 @@ export async function saveTrades(trades, mode = "backtesting") {
 export async function updateTrade(id, trade) {
   const { error } = await supabase.from("trades").update({
     date: trade.date,
-    asset: trade.asset,
     rr: trade.rr || 0,
     pnl: trade.pnl,
   }).eq("id", id);
