@@ -269,7 +269,6 @@ export async function updateForwardTrade(id, trade) {
     location: trade.location,
     notes: trade.notes,
     learnings: trade.learnings,
-    fees: trade.fees || 0,
     screenshot_url: trade.screenshot_url || null,
   }).eq("id", id);
   if (error) throw error;
