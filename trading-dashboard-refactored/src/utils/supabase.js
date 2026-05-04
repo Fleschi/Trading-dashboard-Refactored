@@ -249,7 +249,6 @@ export async function saveForwardTrade(trade) {
     location: trade.location,
     notes: trade.notes,
     learnings: trade.learnings,
-    fees: trade.fees || 0,
     screenshot_url: trade.screenshot_url || null,
   }]).select();
   if (error) throw error;
