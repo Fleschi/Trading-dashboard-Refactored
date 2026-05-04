@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { saveTrade, saveForwardTrade, deleteTrade, updateTrade } from "../utils/supabase";
+import { saveTrade, saveForwardTrade, deleteTrade, updateTrade, updateForwardTrade, deleteForwardTrade } from "../utils/supabase";
 import { C } from "../utils/ui";
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
@@ -20,8 +20,6 @@ const isoToParts = (iso) => {
 const EMPTY_PARTS = () => ({ dd:"", mm:"", yy:"", hh:"", mn:"" });
 
 // ─── SegmentedDateInput ───────────────────────────────────────────────────────
-// 5 real inputs in one visual box — each handles its own digits independently.
-// No shift-bleeding on backspace because each segment is isolated.
 
 function SegmentedDateInput({ parts, onChange, D }) {
   const refs = { dd: useRef(), mm: useRef(), yy: useRef(), hh: useRef(), mn: useRef() };
@@ -48,7 +46,6 @@ function SegmentedDateInput({ parts, onChange, D }) {
       if (parts[key] && parts[key].length > 0) {
         onChange({ ...parts, [key]: parts[key].slice(0, -1) });
       } else if (idx > 0) {
-        // Jump to previous segment and delete its last char
         const prevKey = ORDER[idx - 1];
         refs[prevKey].current?.focus();
         if (parts[prevKey]) {
@@ -62,13 +59,11 @@ function SegmentedDateInput({ parts, onChange, D }) {
       e.preventDefault();
       const cur = parts[key] || "";
       if (cur.length >= 2) {
-        // Segment full — shift left and append new digit
         const next = cur.slice(1) + e.key;
         onChange({ ...parts, [key]: next });
       } else {
         const next = cur + e.key;
         onChange({ ...parts, [key]: next });
-        // Auto-advance when full
         if (next.length === 2 && idx < ORDER.length - 1) {
           refs[ORDER[idx + 1]].current?.focus();
         }
@@ -83,7 +78,6 @@ function SegmentedDateInput({ parts, onChange, D }) {
     }
   };
 
-  // Suppress onChange — all input handled via onKeyDown
   const handleChange = () => {};
 
   return (
@@ -148,22 +142,46 @@ export default function DataEntry({ trades, onTradesChange, design, mode = "back
   };
 
   const remove = async (id) => {
-    try { await deleteTrade(id); onTradesChange(prev=>prev.filter(t=>t.id!==id)); setSelected(prev=>{ const n=new Set(prev); n.delete(id); return n; }); } catch(e) { console.error(e); }
+    try {
+      if (mode === "forward") {
+        await deleteForwardTrade(id);
+      } else {
+        await deleteTrade(id);
+      }
+      onTradesChange(prev => prev.filter(t => t.id !== id));
+      setSelected(prev => { const n = new Set(prev); n.delete(id); return n; });
+    } catch(e) { console.error(e); }
   };
+
   const deleteSelected = async () => {
     if (!selected.size) return;
-    try { await Promise.all([...selected].map(id=>deleteTrade(id))); onTradesChange(prev=>prev.filter(t=>!selected.has(t.id))); setSelected(new Set()); } catch(e) { console.error(e); }
+    try {
+      const deleteFn = mode === "forward" ? deleteForwardTrade : deleteTrade;
+      await Promise.all([...selected].map(id => deleteFn(id)));
+      onTradesChange(prev => prev.filter(t => !selected.has(t.id)));
+      setSelected(new Set());
+    } catch(e) { console.error(e); }
   };
-  const startEdit = (t) => { setEditId(t.id); setEditForm({ ...isoToParts(t.date), rr:String(t.rr||""), pnl:String(t.pnl||"") }); };
+
+  const startEdit = (t) => {
+    setEditId(t.id);
+    setEditForm({ ...isoToParts(t.date), rr:String(t.rr||""), pnl:String(t.pnl||"") });
+  };
+
   const saveEdit = async () => {
     try {
       const isoDate = convertDate(editForm);
       const pnl = parseFloat(editForm.pnl)||0, rr = parseFloat(editForm.rr)||0;
-      await updateTrade(editId, { date:isoDate, pnl, rr });
-      onTradesChange(prev=>prev.map(t=>t.id===editId?{...t,date:isoDate,pnl,rr}:t));
+      if (mode === "forward") {
+        await updateForwardTrade(editId, { date:isoDate, pnl, rr });
+      } else {
+        await updateTrade(editId, { date:isoDate, pnl, rr });
+      }
+      onTradesChange(prev => prev.map(t => t.id === editId ? { ...t, date:isoDate, pnl, rr } : t));
       setEditId(null);
     } catch(e) { console.error(e); }
   };
+
   const exportCSV = () => {
     const csv = [["Date","Outcome","RR","PnL"],...trades.map(t=>[t.date,t.pnl>0?"win":t.pnl<0?"loss":"be",t.rr,t.pnl])].map(r=>r.join(",")).join("\n");
     const a = document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="trades.csv"; a.click();
