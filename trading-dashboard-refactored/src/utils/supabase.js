@@ -238,7 +238,6 @@ export async function loadForwardTrades() {
 export async function saveForwardTrade(trade) {
   const { data, error } = await supabase.from("forward_trades").insert([{
     date: trade.date,
-    time_entered: trade.time_entered,
     pnl: trade.pnl,
     rr: trade.rr,
   }]).select();
@@ -249,7 +248,6 @@ export async function saveForwardTrade(trade) {
 export async function updateForwardTrade(id, trade) {
   const { error } = await supabase.from("forward_trades").update({
     date: trade.date,
-    time_entered: trade.time_entered,
     pnl: trade.pnl,
     rr: trade.rr,
   }).eq("id", id);
