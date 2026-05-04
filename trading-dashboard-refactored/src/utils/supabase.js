@@ -239,17 +239,8 @@ export async function saveForwardTrade(trade) {
   const { data, error } = await supabase.from("forward_trades").insert([{
     date: trade.date,
     time_entered: trade.time_entered,
-    direction: trade.direction,
-    continuation: trade.continuation,
     pnl: trade.pnl,
     rr: trade.rr,
-    risk: trade.risk ?? 250,
-    sl_management: trade.sl_management,
-    tp_management: trade.tp_management,
-    location: trade.location,
-    notes: trade.notes,
-    learnings: trade.learnings,
-    screenshot_url: trade.screenshot_url || null,
   }]).select();
   if (error) throw error;
   return data[0];
