@@ -61,13 +61,22 @@ function EquityCurve({ stats, D }) {
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 function CalendarView({ trades, D }) {
-  const [viewDate, setViewDate] = useState(() => {
-    if (!trades?.length) return new Date();
-    // Always open on the month of the most recent trade
-    const latest = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date))[0].date;
-    const d = new Date(latest);
+  const getLatest = (ts) => {
+    if (!ts?.length) return new Date();
+    const d = new Date([...ts].sort((a,b) => new Date(b.date)-new Date(a.date))[0].date);
     return isNaN(d) ? new Date() : d;
-  });
+  };
+  const [viewDate, setViewDate] = useState(getLatest(trades));
+
+  // useEffect to sync when trades load asynchronously after mount
+  const tradesLen = trades?.length || 0;
+  const latestDate = tradesLen > 0 ? trades.reduce((a,b) => new Date(a.date)>new Date(b.date)?a:b).date : null;
+  const [lastSynced, setLastSynced] = useState(null);
+  if (latestDate && latestDate !== lastSynced) {
+    setLastSynced(latestDate);
+    const d = new Date(latestDate);
+    if (!isNaN(d)) setViewDate(d);
+  }
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -208,7 +217,11 @@ export default function Overview({ stats, design: D }) {
         </div>
       </GlowCard>
 
-      <CalendarView trades={stats.rawTrades || []} D={D} />
+      <CalendarView
+        key={stats.rawTrades?.length ? [...stats.rawTrades].sort((a,b) => new Date(b.date)-new Date(a.date))[0].date : "empty"}
+        trades={stats.rawTrades || []}
+        D={D}
+      />
     </div>
   );
 }
