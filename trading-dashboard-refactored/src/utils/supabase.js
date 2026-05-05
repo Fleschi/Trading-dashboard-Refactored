@@ -263,7 +263,7 @@ export async function loadNotebookEntries() {
   const { data, error } = await supabase
     .from("notebook_entries")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("time_entered", { ascending: false });
 
   if (error) throw error;
   return data;
