@@ -134,6 +134,7 @@ function EntryCard({ entry, D, onDelete, onEdit }) {
 
   const typeColor = entry.type === "Continuation" ? D.green : D.yellow;
   const htfColor  = entry.along_htf === "Yes" ? D.green : D.red;
+  const outcomeColor = entry.outcome === "Win" ? D.green : D.red;
 
   return (
     <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 14, overflow: "hidden" }}>
@@ -141,6 +142,9 @@ function EntryCard({ entry, D, onDelete, onEdit }) {
         <span style={{ fontSize: 12, color: D.textMuted, fontFamily: "monospace" }}>{entry.time_entered}</span>
         {entry.type && (
           <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 10px", borderRadius: 6, background: `${typeColor}18`, color: typeColor }}>{entry.type}</span>
+        )}
+        {entry.outcome && (
+          <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 10px", borderRadius: 6, background: `${outcomeColor}18`, color: outcomeColor }}>{entry.outcome}</span>
         )}
         {entry.along_htf && (
           <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: `${htfColor}12`, color: htfColor, fontWeight: 600 }}>HTF {entry.along_htf}</span>
@@ -220,6 +224,7 @@ const emptyForm = () => ({
   datetime: "",
   type: "",
   alongHTF: "",
+  outcome: "",        // Win or Loss
   wentGood: "",
   wentWrong: "",
   keyTakeaway: "",
@@ -246,6 +251,7 @@ export default function TradeNotebook({ design }) {
       datetime: entry.time_entered || "",
       type: entry.type || "",
       alongHTF: entry.along_htf || "",
+      outcome: entry.outcome || "",
       wentGood: entry.went_good || "",
       wentWrong: entry.went_wrong || "",
       keyTakeaway: entry.key_takeaway || "",
@@ -303,6 +309,7 @@ export default function TradeNotebook({ design }) {
         time_entered: form.datetime,
         type: form.type,
         along_htf: form.alongHTF,
+        outcome: form.outcome,
         went_good: form.wentGood,
         went_wrong: form.wentWrong,
         key_takeaway: form.keyTakeaway,
@@ -358,11 +365,18 @@ export default function TradeNotebook({ design }) {
             <TextInput value={form.datetime} onChange={handleDatetime} D={D} placeholder="DD/MM/YY HH:MM" style={{ maxWidth: 180, fontFamily: "monospace" }} />
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
             <Field label="Type">
               <div style={{ display: "flex", gap: 8 }}>
                 {["Continuation", "Reversal"].map(t => (
                   <SelBtn key={t} label={t} active={form.type === t} color={t === "Continuation" ? D.green : D.yellow} onClick={() => set("type", t)} />
+                ))}
+              </div>
+            </Field>
+            <Field label="Outcome">
+              <div style={{ display: "flex", gap: 8 }}>
+                {["Win", "Loss"].map(t => (
+                  <SelBtn key={t} label={t} active={form.outcome === t} color={t === "Win" ? D.green : D.red} onClick={() => set("outcome", t)} />
                 ))}
               </div>
             </Field>
