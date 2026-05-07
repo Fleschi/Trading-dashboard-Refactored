@@ -129,7 +129,6 @@ function AttachButton({ label, file, existingUrl, onFile, onClear, D, uploading 
 }
 
 function EntryCard({ entry, D, onDelete, onEdit }) {
-  const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const typeColor = entry.type === "Continuation" ? D.green : D.yellow;
@@ -137,83 +136,89 @@ function EntryCard({ entry, D, onDelete, onEdit }) {
   const outcomeColor = entry.outcome === "Win" ? D.green : D.red;
 
   return (
-    <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 14, overflow: "hidden" }}>
-      <div onClick={() => setOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", cursor: "pointer", flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12, color: D.textMuted, fontFamily: "monospace" }}>{entry.time_entered}</span>
-        {entry.type && (
-          <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 10px", borderRadius: 6, background: `${typeColor}18`, color: typeColor }}>{entry.type}</span>
-        )}
-        {entry.outcome && (
-          <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 10px", borderRadius: 6, background: `${outcomeColor}18`, color: outcomeColor }}>{entry.outcome}</span>
-        )}
-        {entry.along_htf && (
-          <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: `${htfColor}12`, color: htfColor, fontWeight: 600 }}>HTF {entry.along_htf}</span>
-        )}
-        {entry.key_takeaway && (
-          <span style={{ fontSize: 12, color: D.textMuted, fontStyle: "italic", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.key_takeaway}</span>
-        )}
-        <span style={{ marginLeft: "auto", color: D.textMuted, fontSize: 12 }}>{open ? "▲" : "▼"}</span>
+    <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* Header with metadata badges */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, paddingBottom: 16, borderBottom: `1px solid ${D.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 14, color: D.text, fontFamily: "monospace", fontWeight: 600 }}>{entry.time_entered}</span>
+          {entry.type && (
+            <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 8, background: `${typeColor}18`, color: typeColor, border: `1px solid ${typeColor}30` }}>{entry.type}</span>
+          )}
+          {entry.outcome && (
+            <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 8, background: `${outcomeColor}18`, color: outcomeColor, border: `1px solid ${outcomeColor}30` }}>{entry.outcome}</span>
+          )}
+          {entry.along_htf && (
+            <span style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, background: `${htfColor}12`, color: htfColor, fontWeight: 600, border: `1px solid ${htfColor}25` }}>HTF {entry.along_htf}</span>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => onEdit(entry)} style={{ background: "transparent", border: `1px solid ${D.border}`, borderRadius: 8, color: D.text, cursor: "pointer", fontSize: 12, padding: "6px 14px", fontWeight: 500 }}>Edit</button>
+          <button onClick={async () => { setDeleting(true); await onDelete(entry.id); }} disabled={deleting} style={{ background: "transparent", border: `1px solid ${D.red}30`, borderRadius: 8, color: D.red, cursor: "pointer", fontSize: 12, padding: "6px 14px", opacity: deleting ? 0.5 : 1, fontWeight: 500 }}>
+            {deleting ? "Deleting…" : "Delete"}
+          </button>
+        </div>
       </div>
 
-      {open && (
-        <div style={{ borderTop: `1px solid ${D.border}`, padding: "20px 20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-          {(entry.screenshot_htf_url || entry.screenshot_exec_url) && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              {entry.screenshot_htf_url && (
-                <div>
-                  <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Daily Bias</div>
-                  <img
-                    src={entry.screenshot_htf_url}
-                    alt="HTF"
-                    style={{ width: "100%", borderRadius: 8, border: `1px solid ${D.border}`, cursor: "pointer" }}
-                    onClick={() => window.open(entry.screenshot_htf_url, "_blank")}
-                    onError={e => { e.target.style.display = "none"; }}
-                  />
-                </div>
-              )}
-              {entry.screenshot_exec_url && (
-                <div>
-                  <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 6 }}>Execution</div>
-                  <img
-                    src={entry.screenshot_exec_url}
-                    alt="Exec"
-                    style={{ width: "100%", borderRadius: 8, border: `1px solid ${D.border}`, cursor: "pointer" }}
-                    onClick={() => window.open(entry.screenshot_exec_url, "_blank")}
-                    onError={e => { e.target.style.display = "none"; }}
-                  />
-                </div>
-              )}
+      {/* Screenshots section - prominently at top */}
+      {(entry.screenshot_htf_url || entry.screenshot_exec_url) && (
+        <div style={{ display: "grid", gridTemplateColumns: entry.screenshot_htf_url && entry.screenshot_exec_url ? "1fr 1fr" : "1fr", gap: 16 }}>
+          {entry.screenshot_htf_url && (
+            <div>
+              <div style={{ fontSize: 11, color: D.textMuted, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Daily Bias</div>
+              <img
+                src={entry.screenshot_htf_url}
+                alt="HTF"
+                style={{ width: "100%", borderRadius: 12, border: `1px solid ${D.border}`, cursor: "pointer", display: "block" }}
+                onClick={() => window.open(entry.screenshot_htf_url, "_blank")}
+                onError={e => { e.target.style.display = "none"; }}
+              />
             </div>
           )}
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            {entry.went_good && (
-              <div>
-                <div style={{ fontSize: 10, color: D.green, marginBottom: 6 }}>What went well</div>
-                <div style={{ fontSize: 13, color: D.text, whiteSpace: "pre-wrap" }}>{entry.went_good}</div>
-              </div>
-            )}
-            {entry.went_wrong && (
-              <div>
-                <div style={{ fontSize: 10, color: D.red, marginBottom: 6 }}>What went wrong</div>
-                <div style={{ fontSize: 13, color: D.text, whiteSpace: "pre-wrap" }}>{entry.went_wrong}</div>
-              </div>
-            )}
-          </div>
-
-          {entry.key_takeaway && (
-            <div style={{ background: `${D.border}40`, border: `1px solid ${D.border}`, borderRadius: 10, padding: "12px 16px" }}>
-              <div style={{ fontSize: 10, color: D.textMuted, marginBottom: 4 }}>Key Takeaway</div>
-              <div style={{ fontSize: 13, color: D.text }}>{entry.key_takeaway}</div>
+          {entry.screenshot_exec_url && (
+            <div>
+              <div style={{ fontSize: 11, color: D.textMuted, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Execution</div>
+              <img
+                src={entry.screenshot_exec_url}
+                alt="Exec"
+                style={{ width: "100%", borderRadius: 12, border: `1px solid ${D.border}`, cursor: "pointer", display: "block" }}
+                onClick={() => window.open(entry.screenshot_exec_url, "_blank")}
+                onError={e => { e.target.style.display = "none"; }}
+              />
             </div>
           )}
+        </div>
+      )}
 
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => onEdit(entry)} style={{ background: "transparent", border: `1px solid ${D.border}`, borderRadius: 6, color: D.text, cursor: "pointer", fontSize: 12, padding: "4px 12px" }}>Edit</button>
-            <button onClick={async () => { setDeleting(true); await onDelete(entry.id); }} disabled={deleting} style={{ background: "transparent", border: `1px solid ${D.border}`, borderRadius: 6, color: D.red, cursor: "pointer", fontSize: 12, padding: "4px 12px", opacity: deleting ? 0.5 : 1 }}>
-              {deleting ? "Deleting…" : "Delete"}
-            </button>
+      {/* Analysis section - What went well / wrong */}
+      {(entry.went_good || entry.went_wrong) && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {entry.went_good && (
+            <div style={{ background: `${D.green}08`, border: `1px solid ${D.green}20`, borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 11, color: D.green, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6 }}>
+                <span>✓</span> What went well
+              </div>
+              <div style={{ fontSize: 13, color: D.text, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{entry.went_good}</div>
+            </div>
+          )}
+          {entry.went_wrong && (
+            <div style={{ background: `${D.red}08`, border: `1px solid ${D.red}20`, borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 11, color: D.red, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6 }}>
+                <span>✗</span> What went wrong
+              </div>
+              <div style={{ fontSize: 13, color: D.text, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{entry.went_wrong}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Key takeaway - highlighted */}
+      {entry.key_takeaway && (
+        <div style={{ background: `${D.blue}08`, border: `1px solid ${D.blue}25`, borderRadius: 12, padding: 18 }}>
+          <div style={{ fontSize: 11, color: D.blue, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6 }}>
+            <span>💡</span> Key Takeaway
           </div>
+          <div style={{ fontSize: 14, color: D.text, lineHeight: 1.6, fontWeight: 500 }}>{entry.key_takeaway}</div>
         </div>
       )}
     </div>
@@ -450,7 +455,7 @@ export default function TradeNotebook({ design }) {
         <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 14, padding: 32, textAlign: "center", color: D.textMuted, fontSize: 13 }}>No entries yet.</div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {entries.map(e => (
           <EntryCard
             key={e.id}
