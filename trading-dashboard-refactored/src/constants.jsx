@@ -87,14 +87,20 @@ export const BACKGROUNDS = [
   },
   {
     id: "radial-multi",
-    label: "Multi Radial",
+    label: "Multi Gradient",
     preview: (bg) => ({
-      background: `radial-gradient(circle at 15% 85%, #a78bfa35, transparent 40%), radial-gradient(circle at 85% 15%, #818cf835, transparent 40%), radial-gradient(circle at 50% 50%, #34d39925, transparent 50%), ${bg}`,
+      background: `radial-gradient(circle at 50% 120%, #a78bfa40, transparent 35%), radial-gradient(circle at 50% 110%, #ffffff25, transparent 40%), ${bg}`,
+      filter: 'blur(0px)',
     }),
     render: (D) => (
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
-        background: `radial-gradient(circle 600px at 15% 85%, #a78bfa18, transparent), radial-gradient(circle 600px at 85% 15%, #818cf815, transparent), radial-gradient(circle 500px at 50% 50%, #34d39912, transparent), ${D.bg}`,
-      }} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: `radial-gradient(circle 900px at 50% 120%, ${D.gradientColor1 || "#a78bfa"}35, transparent), radial-gradient(circle 800px at 50% 115%, ${D.gradientColor2 || "#ffffff"}18, transparent), ${D.bg}`,
+          filter: 'blur(60px)',
+        }} />
+      </div>
     ),
   },
 ];
