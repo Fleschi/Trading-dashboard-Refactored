@@ -85,6 +85,18 @@ export const BACKGROUNDS = [
       }} />
     ),
   },
+  {
+    id: "radial-multi",
+    label: "Multi Radial",
+    preview: (bg) => ({
+      background: `radial-gradient(circle at 15% 85%, #a78bfa35, transparent 40%), radial-gradient(circle at 85% 15%, #818cf835, transparent 40%), radial-gradient(circle at 50% 50%, #34d39925, transparent 50%), ${bg}`,
+    }),
+    render: (D) => (
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+        background: `radial-gradient(circle 600px at 15% 85%, #a78bfa18, transparent), radial-gradient(circle 600px at 85% 15%, #818cf815, transparent), radial-gradient(circle 500px at 50% 50%, #34d39912, transparent), ${D.bg}`,
+      }} />
+    ),
+  },
 ];
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
