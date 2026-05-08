@@ -20,7 +20,7 @@ function EquityCurve({ stats, D }) {
   const yMin      = Math.floor((minEq - pad) / 500) * 500;
   const yMax      = Math.ceil((maxEq + pad) / 500) * 500;
   const totalPnl  = equities[equities.length - 1];
-  const accent    = totalPnl >= 0 ? D.green : D.red;
+  const accent    = D.blue; // Use accent color instead of green/red
 
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;

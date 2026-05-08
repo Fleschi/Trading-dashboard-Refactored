@@ -30,9 +30,9 @@ export default function Settings({ design, onChange }) {
   const lbl = { fontSize: 11, color: D.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6, fontWeight: 600 };
   const reset = () => { onChange(DEFAULT_DESIGN); saveDesign(DEFAULT_DESIGN); };
 
-  // Filter out backgrounds to hide: grid-dark, grid-glow, dots, noise
-  const HIDDEN_BG = ["grid-dark", "grid-glow", "dots", "noise"];
-  const visibleBgs = BACKGROUNDS.filter(b => !HIDDEN_BG.includes(b.id));
+  // Only show: none (solid) and radial-dual
+  const ALLOWED_BG = ["none", "radial-dual"];
+  const visibleBgs = BACKGROUNDS.filter(b => ALLOWED_BG.includes(b.id));
 
   return (
     <div style={{ display: "flex", justifyContent: "center" }}>
@@ -56,8 +56,8 @@ export default function Settings({ design, onChange }) {
             })}
           </div>
 
-          {/* Radial color picker — only show when a radial bg is active */}
-          {["radial", "radial-top", "radial-dual"].includes(D.background) && (
+          {/* Radial color picker — only show when radial-dual is active */}
+          {D.background === "radial-dual" && (
             <div>
               <label style={lbl}>Radial Color</label>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
