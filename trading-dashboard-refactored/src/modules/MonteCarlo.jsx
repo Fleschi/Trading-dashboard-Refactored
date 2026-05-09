@@ -15,42 +15,42 @@ function calcTradesPerWeek(trades) {
   return Math.max(1, trades.length / Math.max(1, Object.keys(map).length));
 }
 
-ffunction runMC(trades, simCount, weeks) {
-   if (!trades?.length) return [];
-   const pnls = trades.map(t => t.pnl);
-   const tradesPerWeek = calcTradesPerWeek(trades);
-   const tradesTotal = Math.min(Math.round(weeks * tradesPerWeek), 1500);
+function runMC(trades, simCount, weeks) {
+  if (!trades?.length) return [];
+  const pnls = trades.map(t => t.pnl);
+  const tradesPerWeek = calcTradesPerWeek(trades);
+  const tradesTotal = Math.min(Math.round(weeks * tradesPerWeek), 1500);
 
-   // FIX 1: Wir speichern JEDEN Trade, nicht nur Intervalle,
-   // um die starren "Stränge" zu vermeiden.
-   const effectiveSimCount = Math.min(simCount, 2000);
-   const results = [];
+  // FIX 1: Wir speichern JEDEN Trade, nicht nur Intervalle,
+  // um die starren "Stränge" zu vermeiden.
+  const effectiveSimCount = Math.min(simCount, 2000);
+  const results = [];
 
-   for (let s = 0; s < effectiveSimCount; s++) {
-     let equity = 0, peak = 0, maxDD = 0;
-     const path = [0];
+  for (let s = 0; s < effectiveSimCount; s++) {
+    let equity = 0, peak = 0, maxDD = 0;
+    const path = [0];
 
-     for (let t = 0; t < tradesTotal; t++) {
-       const basePnl = pnls[Math.floor(Math.random() * pnls.length)];
+    for (let t = 0; t < tradesTotal; t++) {
+      const basePnl = pnls[Math.floor(Math.random() * pnls.length)];
 
-       // FIX 2: "Micro-Jittering"
-       // Wir fügen ein winziges Rauschen hinzu (0.1%), damit keine zwei
-       // Linien exakt übereinander liegen, selbst bei gleichen Trades.
-       const jitter = (Math.random() - 0.5) * (Math.abs(basePnl) * 0.01);
+      // FIX 2: "Micro-Jittering"
+      // Wir fügen ein winziges Rauschen hinzu (0.1%), damit keine zwei
+      // Linien exakt übereinander liegen, selbst bei gleichen Trades.
+      const jitter = (Math.random() - 0.5) * (Math.abs(basePnl) * 0.01);
 
-       equity += (basePnl + jitter);
+      equity += (basePnl + jitter);
 
-       if (equity > peak) peak = equity;
-       const dd = peak - equity;
-       if (dd > maxDD) maxDD = dd;
+      if (equity > peak) peak = equity;
+      const dd = peak - equity;
+      if (dd > maxDD) maxDD = dd;
 
-       // Wir pushen JEDEN Wert für eine glatte Wolke
-       path.push(equity);
-     }
-     results.push({ finalPnl: equity, maxDD, path });
-   }
-   return results;
- }
+      // Wir pushen JEDEN Wert für eine glatte Wolke
+      path.push(equity);
+    }
+    results.push({ finalPnl: equity, maxDD, path });
+  }
+  return results;
+}
 
 function PathHeatmap({ mcResults, design: D }) {
   const W = 700, H = 300;
