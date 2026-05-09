@@ -27,6 +27,8 @@ function runMC(trades, simCount, weeks) {
     let equity = 0, peak = 0, maxDD = 0;
     const path = [0];
     for (let t = 0; t < tradesTotal; t++) {
+      const basePnl = pnls[Math.floor(Math.random() * pnls.length)];
+      const jitter = basePnl * (Math.random() * 0.04 - 0.02);
       equity += pnls[Math.floor(Math.random() * pnls.length)];
       if (equity > peak) peak = equity;
       const dd = peak - equity;
