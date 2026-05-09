@@ -41,34 +41,87 @@ function runMC(trades, simCount, weeks) {
 
 
 
+Das Problem mit der Y-Achse liegt daran, dass deine aktuelle Skalierung einfach nur das absolute Minimum und Maximum der Daten nimmt (yMin, yMax). Das führt zu diesen unschönen, krummen Werten an den Rändern.
+
+Um das zu fixen, müssen wir eine "Pretty Tick" Logik einbauen. Wir berechnen den Bereich, schlagen einen Puffer drauf und runden dann auf die nächste glatte Zahl (z. B. den nächsten 500er oder 1000er Schritt).
+
+Hier ist der angepasste Code für deine PathHeatmap Komponente:
+
+JavaScript
 function PathHeatmap({ mcResults, design: D }) {
   const W = 700, H = 300;
-  const PAD = { top: 16, right: 16, bottom: 32, left: 56 };
+  const PAD = { top: 30, right: 20, bottom: 40, left: 65 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
+
   const pathLen = mcResults[0]?.path.length || 0;
   if (pathLen < 2) return null;
+
+  // 1. Absolute Extremwerte finden
   const allVals = mcResults.flatMap(r => r.path);
-  const yMin = Math.min(...allVals), yMax = Math.max(...allVals);
-  const yRange = yMax - yMin || 1;
+  const rawMin = Math.min(...allVals);
+  const rawMax = Math.max(...allVals);
+
+  // 2. Buffer hinzufügen (20% in beide Richtungen)
+  const rangeWidth = rawMax - rawMin;
+  const buffer = rangeWidth * 0.2;
+
+  // 3. "Schöne" Grenzen berechnen (Aufrunden auf glatte Zahlen)
+  // Wir wählen ein Intervall, z.B. 500 oder 1000, basierend auf der Range
+  const step = rangeWidth > 5000 ? 1000 : 500;
+  const yMin = Math.floor((rawMin - buffer) / step) * step;
+  const yMax = Math.ceil((rawMax + buffer) / step) * step;
+  const yRange = yMax - yMin;
+
+  // 4. Skalierungsfunktionen
   const xScale = i => PAD.left + (i / (pathLen - 1)) * innerW;
   const yScale = v => PAD.top + innerH - ((v - yMin) / yRange) * innerH;
+
+  // 5. Ticks generieren (Alle 'step' Dollar eine Markierung)
+  const ticks = [];
+  for (let v = yMin; v <= yMax; v += step) {
+    ticks.push(v);
+  }
+
   const pathToPoints = path => path.map((v, i) => `${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
-  const yTickVals = Array.from({ length: 6 }, (_, i) => yMin + (yRange / 5) * i);
-  const fmtY = v => v >= 0 ? `+$${(v/1000).toFixed(1)}k` : `-$${(Math.abs(v)/1000).toFixed(1)}k`;
+  const fmtY = v => v === 0 ? "$0" : (v >= 0 ? `+$${v.toLocaleString()}` : `-$${Math.abs(v).toLocaleString()}`);
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
-      {yTickVals.map((v, i) => (
-        <g key={i}>
-          <line x1={PAD.left} y1={yScale(v)} x2={W - PAD.right} y2={yScale(v)} stroke={D.border} strokeWidth="0.5" strokeDasharray="3,3" />
-          <text x={PAD.left - 6} y={yScale(v) + 4} textAnchor="end" fill={D.textMuted} fontSize="9">{fmtY(v)}</text>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block", overflow: "visible" }}>
+      {/* Horizontale Linien & Beschriftung */}
+      {ticks.map((v) => (
+        <g key={v}>
+          <line
+            x1={PAD.left} y1={yScale(v)}
+            x2={W - PAD.right} y2={yScale(v)}
+            stroke={D.border} strokeWidth="0.5"
+            strokeDasharray={v === 0 ? "" : "3,3"}
+            opacity={v === 0 ? 1 : 0.5}
+          />
+          <text
+            x={PAD.left - 8} y={yScale(v) + 3}
+            textAnchor="end" fill={D.textMuted} fontSize="10" fontWeight={v === 0 ? "bold" : "normal"}
+          >
+            {fmtY(v)}
+          </text>
         </g>
       ))}
-      {yMin < 0 && yMax > 0 && <line x1={PAD.left} y1={yScale(0)} x2={W - PAD.right} y2={yScale(0)} stroke={D.border} strokeWidth="1" />}
-      {mcResults.map((r, i) => (
-        <polyline key={i} points={pathToPoints(r.path)} fill="none" stroke={r.finalPnl >= 0 ? D.green : D.red} strokeWidth="0.5" strokeOpacity="0.07" />
-      ))}
-      <text x={PAD.left + innerW / 2} y={H - 4} textAnchor="middle" fill={D.textMuted} fontSize="10">months</text>
+
+      {/* Die Pfade */}
+      <g>
+        {mcResults.map((r, i) => (
+          <polyline
+            key={i}
+            points={pathToPoints(r.path)}
+            fill="none"
+            stroke={r.finalPnl >= 0 ? D.green : D.red}
+            strokeWidth="0.8"
+            strokeOpacity="0.08"
+          />
+        ))}
+      </g>
+
+      <text x={PAD.left + innerW / 2} y={H - 5} textAnchor="middle" fill={D.textMuted} fontSize="11">Simulation Timeline (Trades)</text>
     </svg>
   );
 }
