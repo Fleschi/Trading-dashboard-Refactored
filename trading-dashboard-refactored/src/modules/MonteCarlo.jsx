@@ -39,15 +39,6 @@ function runMC(trades, simCount, weeks) {
   return results;
 }
 
-
-
-Das Problem mit der Y-Achse liegt daran, dass deine aktuelle Skalierung einfach nur das absolute Minimum und Maximum der Daten nimmt (yMin, yMax). Das führt zu diesen unschönen, krummen Werten an den Rändern.
-
-Um das zu fixen, müssen wir eine "Pretty Tick" Logik einbauen. Wir berechnen den Bereich, schlagen einen Puffer drauf und runden dann auf die nächste glatte Zahl (z. B. den nächsten 500er oder 1000er Schritt).
-
-Hier ist der angepasste Code für deine PathHeatmap Komponente:
-
-JavaScript
 function PathHeatmap({ mcResults, design: D }) {
   const W = 700, H = 300;
   const PAD = { top: 30, right: 20, bottom: 40, left: 65 };
