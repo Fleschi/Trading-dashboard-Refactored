@@ -20,16 +20,14 @@ function runMC(trades, simCount, weeks) {
   const pnls = trades.map(t => t.pnl);
   const tradesPerWeek = calcTradesPerWeek(trades);
   const tradesTotal = Math.min(Math.round(weeks * tradesPerWeek), 1500);
-  const snapshotInterval = Math.max(1, Math.round(tradesPerWeek));
+  const snapshotInterval = Math.max(5, Math.round(tradesPerWeek * 2));
   const effectiveSimCount = Math.min(simCount, Math.floor(600000 / Math.max(tradesTotal, 1)));
   const results = [];
   for (let s = 0; s < effectiveSimCount; s++) {
     let equity = 0, peak = 0, maxDD = 0;
     const path = [0];
     for (let t = 0; t < tradesTotal; t++) {
-      const basePnl = pnls[Math.floor(Math.random() * pnls.length)];
-      const jitter = basePnl * (Math.random() * 0.04 - 0.02);
-      equity += (basePnl + jitter);
+      equity += pnls[Math.floor(Math.random() * pnls.length)];
       if (equity > peak) peak = equity;
       const dd = peak - equity;
       if (dd > maxDD) maxDD = dd;
