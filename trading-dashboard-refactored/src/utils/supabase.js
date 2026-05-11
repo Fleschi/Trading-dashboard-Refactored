@@ -162,65 +162,7 @@ export async function updateTrade(id, trade) {
   if (error) throw error;
 }
 
-// ── Journal ──────────────────────────────────────────────────────────────────
 
-export async function loadJournal() {
-  const { data, error } = await supabase
-    .from("journal")
-    .select("*")
-    .order("date", { ascending: false });
-  if (error) throw error;
-  return data;
-}
-
-export async function saveJournalEntry(entry) {
-  const { data, error } = await supabase.from("journal").insert([{
-    date: entry.date,
-    mode: entry.mode || "live",
-    asset: entry.asset,
-    bias: entry.bias,
-    pnl: entry.pnl,
-    rr: entry.rr,
-    outcome: entry.outcome,
-    notes: entry.notes,
-    learnings: entry.learnings,
-    screenshot_url: entry.screenshot_url || null,
-  }]).select();
-  if (error) throw error;
-  return data[0];
-}
-
-export async function updateJournalEntry(id, entry) {
-  const { error } = await supabase.from("journal").update({
-    date: entry.date,
-    mode: entry.mode,
-    asset: entry.asset,
-    bias: entry.bias,
-    pnl: entry.pnl,
-    rr: entry.rr,
-    outcome: entry.outcome,
-    notes: entry.notes,
-    learnings: entry.learnings,
-    screenshot_url: entry.screenshot_url || null,
-  }).eq("id", id);
-  if (error) throw error;
-}
-
-export async function deleteJournalEntry(id) {
-  const { error } = await supabase.from("journal").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function uploadScreenshot(file, entryId) {
-  const ext = file.name.split(".").pop();
-  const path = `${entryId}-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage
-    .from("journal-screenshots")
-    .upload(path, file, { upsert: true });
-  if (error) throw error;
-  const { data } = supabase.storage.from("journal-screenshots").getPublicUrl(path);
-  return data.publicUrl;
-}
 
 // ── Forward Trades ────────────────────────────────────────────────────────────
 
