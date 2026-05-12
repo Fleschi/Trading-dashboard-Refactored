@@ -1,4 +1,4 @@
-
+import { useState } from "react";
 import { useTradeData, useIsMobile, useDesign, useNavigation } from "./hooks";
 import { BACK_MODULES, FWD_MODULES, SETTINGS_MODULE, BOTTOM_NAV_H } from "./constants.jsx";
 
@@ -93,42 +93,83 @@ export default function App() {
           {modules.map(m => {
             const isActive = globalTab !== "settings" && tab === m.id;
             return (
-              <button
-                key={m.id}
-                className={`lg-btn${isActive ? " active" : ""}`}
-                onClick={() => setTab(m.id)}
-                title={m.label}
-                onMouseEnter={(e) => {
-                  const label = e.currentTarget.querySelector('.btn-label');
-                  if (label) label.style.display = 'inline';
-                }}
-                onMouseLeave={(e) => {
-                  const label = e.currentTarget.querySelector('.btn-label');
-                  if (label) label.style.display = 'none';
-                }}
-              >
-                <NavIcon path={m.icon} />
-                <span className="btn-label" style={{ display: 'none' }}>{m.label}</span>
-              </button>
+              <div key={m.id} style={{ position: 'relative' }}>
+                <button
+                  className={`lg-btn${isActive ? " active" : ""}`}
+                  onClick={() => setTab(m.id)}
+                  onMouseEnter={(e) => {
+                    const tooltip = e.currentTarget.nextElementSibling;
+                    if (tooltip) tooltip.style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    const tooltip = e.currentTarget.nextElementSibling;
+                    if (tooltip) tooltip.style.opacity = '0';
+                  }}
+                >
+                  <NavIcon path={m.icon} />
+                </button>
+                <span style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  whiteSpace: 'nowrap',
+                  background: D.card,
+                  border: `1px solid ${D.border}`,
+                  borderRadius: 8,
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  color: D.text,
+                  fontWeight: 500,
+                  opacity: 0,
+                  pointerEvents: 'none',
+                  transition: 'opacity 0.15s',
+                  zIndex: 1000,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                }}>
+                  {m.label}
+                </span>
+              </div>
             );
           })}
           <div className="lg-divider" />
-          <button
-            className={`lg-btn${globalTab === "settings" ? " active" : ""}`}
-            onClick={() => setTab("settings")}
-            title={SETTINGS_MODULE.label}
-            onMouseEnter={(e) => {
-              const label = e.currentTarget.querySelector('.btn-label');
-              if (label) label.style.display = 'inline';
-            }}
-            onMouseLeave={(e) => {
-              const label = e.currentTarget.querySelector('.btn-label');
-              if (label) label.style.display = 'none';
-            }}
-          >
-            <NavIcon path={SETTINGS_MODULE.icon} />
-            <span className="btn-label" style={{ display: 'none' }}>{SETTINGS_MODULE.label}</span>
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              className={`lg-btn${globalTab === "settings" ? " active" : ""}`}
+              onClick={() => setTab("settings")}
+              onMouseEnter={(e) => {
+                const tooltip = e.currentTarget.nextElementSibling;
+                if (tooltip) tooltip.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                const tooltip = e.currentTarget.nextElementSibling;
+                if (tooltip) tooltip.style.opacity = '0';
+              }}
+            >
+              <NavIcon path={SETTINGS_MODULE.icon} />
+            </button>
+            <span style={{
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              whiteSpace: 'nowrap',
+              background: D.card,
+              border: `1px solid ${D.border}`,
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              color: D.text,
+              fontWeight: 500,
+              opacity: 0,
+              pointerEvents: 'none',
+              transition: 'opacity 0.15s',
+              zIndex: 1000,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+            }}>
+              {SETTINGS_MODULE.label}
+            </span>
+          </div>
         </div>
       </div>
 
