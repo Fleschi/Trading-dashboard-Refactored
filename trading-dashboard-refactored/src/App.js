@@ -14,7 +14,6 @@ const NAV_H = 56;
 export default function App() {
   const { backTrades, setBackTrades, fwdTrades, setFwdTrades, backStats, loading, error } = useTradeData();
   const [design, setDesign] = useDesign();
-  const [navHovered, setNavHovered] = useState(false);
   const isMobile = useIsMobile();
   const { mode, isForward, tab, setTab, switchMode, globalTab } = useNavigation();
 
@@ -83,11 +82,7 @@ export default function App() {
       <PageBackground design={D} />
 
       {/* Floating nav */}
-      <div
-        style={{ position: "fixed", top: 0, left: 0, right: 0, height: NAV_H, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px", pointerEvents: "none" }}
-        onMouseEnter={() => setNavHovered(true)}
-        onMouseLeave={() => setNavHovered(false)}
-      >
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: NAV_H, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px", pointerEvents: "none" }}>
         <div className="lg-shell" style={{ pointerEvents: "all" }}>
           <div className="lg-mode">
             {[["backtesting", "Back"], ["forward", "Live"]].map(([m, label]) => (
@@ -98,16 +93,41 @@ export default function App() {
           {modules.map(m => {
             const isActive = globalTab !== "settings" && tab === m.id;
             return (
-              <button key={m.id} className={`lg-btn${isActive ? " active" : ""}`} onClick={() => setTab(m.id)} title={m.label}>
+              <button
+                key={m.id}
+                className={`lg-btn${isActive ? " active" : ""}`}
+                onClick={() => setTab(m.id)}
+                title={m.label}
+                onMouseEnter={(e) => {
+                  const label = e.currentTarget.querySelector('.btn-label');
+                  if (label) label.style.display = 'inline';
+                }}
+                onMouseLeave={(e) => {
+                  const label = e.currentTarget.querySelector('.btn-label');
+                  if (label) label.style.display = 'none';
+                }}
+              >
                 <NavIcon path={m.icon} />
-                {navHovered && <span>{m.label}</span>}
+                <span className="btn-label" style={{ display: 'none' }}>{m.label}</span>
               </button>
             );
           })}
           <div className="lg-divider" />
-          <button className={`lg-btn${globalTab === "settings" ? " active" : ""}`} onClick={() => setTab("settings")} title={SETTINGS_MODULE.label}>
+          <button
+            className={`lg-btn${globalTab === "settings" ? " active" : ""}`}
+            onClick={() => setTab("settings")}
+            title={SETTINGS_MODULE.label}
+            onMouseEnter={(e) => {
+              const label = e.currentTarget.querySelector('.btn-label');
+              if (label) label.style.display = 'inline';
+            }}
+            onMouseLeave={(e) => {
+              const label = e.currentTarget.querySelector('.btn-label');
+              if (label) label.style.display = 'none';
+            }}
+          >
             <NavIcon path={SETTINGS_MODULE.icon} />
-            {navHovered && <span>{SETTINGS_MODULE.label}</span>}
+            <span className="btn-label" style={{ display: 'none' }}>{SETTINGS_MODULE.label}</span>
           </button>
         </div>
       </div>
