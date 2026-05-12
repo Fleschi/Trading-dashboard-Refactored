@@ -131,7 +131,7 @@ function AttachButton({ label, file, existingUrl, onFile, onClear, D, uploading 
 function EntryCard({ entry, D, onDelete, onEdit }) {
   const [deleting, setDeleting] = useState(false);
 
-  const typeColor = entry.type === "Continuation" ? D.green : D.yellow;
+  const typeColor = entry.type === "Continuation" ? D.text : D.text;
   const htfColor  = entry.along_htf === "Yes" ? D.green : D.red;
   const outcomeColor = entry.outcome === "Win" ? D.green : entry.outcome === "Loss" ? D.red : D.yellow;
 
