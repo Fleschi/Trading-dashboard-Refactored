@@ -196,7 +196,7 @@ function EntryCard({ entry, D, onDelete, onEdit }) {
           {entry.went_good && (
             <div style={{ background: `${D.green}08`, border: `1px solid ${D.green}20`, borderRadius: 12, padding: 16 }}>
               <div style={{ fontSize: 11, color: D.green, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                What went well
+                Positive
               </div>
               <div style={{ fontSize: 13, color: D.text, lineHeight: 1.6 }}>{formatBulletPoints(entry.went_good)}</div>
             </div>
@@ -204,7 +204,7 @@ function EntryCard({ entry, D, onDelete, onEdit }) {
           {entry.went_wrong && (
             <div style={{ background: `${D.red}08`, border: `1px solid ${D.red}20`, borderRadius: 12, padding: 16 }}>
               <div style={{ fontSize: 11, color: D.red, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                What went wrong
+                Negative
               </div>
               <div style={{ fontSize: 13, color: D.text, lineHeight: 1.6 }}>{formatBulletPoints(entry.went_wrong)}</div>
             </div>
@@ -216,7 +216,7 @@ function EntryCard({ entry, D, onDelete, onEdit }) {
       {entry.key_takeaway && (
         <div style={{ background: `${D.blue}08`, border: `1px solid ${D.blue}25`, borderRadius: 12, padding: 18 }}>
           <div style={{ fontSize: 11, color: D.blue, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Key Takeaway
+            Learning
           </div>
           <div style={{ fontSize: 14, color: D.text, lineHeight: 1.6, fontWeight: 500 }}>{formatBulletPoints(entry.key_takeaway)}</div>
         </div>
