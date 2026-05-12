@@ -190,7 +190,7 @@ function EntryCard({ entry, D, onDelete, onEdit }) {
         </div>
       )}
 
-      {/* Analysis section - What went well / wrong */}
+      {/* Analysis section - Positive / Negative */}
       {(entry.went_good || entry.went_wrong) && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {entry.went_good && (
