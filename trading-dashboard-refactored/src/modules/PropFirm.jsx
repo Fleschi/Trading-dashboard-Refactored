@@ -315,11 +315,7 @@ export default function PropFirm({ stats, design }) {
   const fmtPct = n => `${(n * 100).toFixed(1)}%`;
   const fmtD   = n => n ? `${n.toFixed(0)}d` : "—";
 
-  const roiData = firms.map((firm, i) => ({
-    name: firm.name,
-    "6 months":  Math.round(results[i]?.net6m    || 0),
-    "12 months": Math.round(results[i]?.netAnnual || 0),
-  }));
+
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
