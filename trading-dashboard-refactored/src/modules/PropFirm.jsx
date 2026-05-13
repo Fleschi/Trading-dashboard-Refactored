@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { C } from "../utils/ui";
 import { loadPropFirms, savePropFirm, updatePropFirm, deletePropFirm } from "../utils/supabase";
 import { fitStudentT, sampleStudentT } from "../utils/calculations";
