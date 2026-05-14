@@ -58,7 +58,7 @@ function runMC(trades, simCount, weeks) {
   const results = [];
   for (let s = 0; s < effectiveSimCount; s++) {
     let equity = 0, peak = 0, maxDD = 0;
-    const path = [0];
+    const path = [];
     for (let t = 0; t < tradesTotal; t++) {
       equity += pnls[Math.floor(Math.random() * pnls.length)];
       if (equity > peak) peak = equity;
@@ -66,7 +66,7 @@ function runMC(trades, simCount, weeks) {
       if (dd > maxDD) maxDD = dd;
       if ((t + 1) % snapshotInterval === 0) path.push(equity);
     }
-    if (path[path.length - 1] !== equity) path.push(equity);
+    if (path.length === 0 || path[path.length - 1] !== equity) path.push(equity);
     results.push({ finalPnl: equity, maxDD, path });
   }
   return results;
@@ -78,13 +78,16 @@ function PathHeatmap({ mcResults, design: D }) {
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
   const pathLen = mcResults[0]?.path.length || 0;
-  if (pathLen < 2) return null;
+  if (pathLen < 1) return null;
   const allVals = mcResults.flatMap(r => r.path);
-  const yMin = Math.min(...allVals), yMax = Math.max(...allVals);
+  const yMin = Math.min(...allVals, 0), yMax = Math.max(...allVals, 0);
   const yRange = yMax - yMin || 1;
-  const xScale = i => PAD.left + (i / (pathLen - 1)) * innerW;
+  const xScale = i => PAD.left + (i / pathLen) * innerW;
   const yScale = v => PAD.top + innerH - ((v - yMin) / yRange) * innerH;
-  const pathToPoints = path => path.map((v, i) => `${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
+  const pathToPoints = path => {
+    const fullPath = [0, ...path];
+    return fullPath.map((v, i) => `${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(" ");
+  };
   const yTickVals = Array.from({ length: 6 }, (_, i) => yMin + (yRange / 5) * i);
   const fmtY = v => v >= 0 ? `+$${(v/1000).toFixed(1)}k` : `-$${(Math.abs(v)/1000).toFixed(1)}k`;
   return (
