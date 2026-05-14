@@ -53,8 +53,26 @@ function runMC(trades, simCount, weeks) {
   const pnls = trades.map(t => t.pnl);
   const tradesPerWeek = calcTradesPerWeek(trades);
   const tradesTotal = Math.min(Math.round(weeks * tradesPerWeek), 1500);
-  const snapshotInterval = Math.max(1, Math.round(tradesPerWeek));
-  const effectiveSimCount = Math.min(simCount, Math.floor(600000 / Math.max(tradesTotal, 1)));
+
+  // Mindestens 20 Snapshots für gleichmäßige Verteilung, maximal alle 5 Trades ein Snapshot
+  const minSnapshots = 20;
+  const maxSnapshotInterval = Math.max(1, Math.floor(tradesTotal / minSnapshots));
+  const snapshotInterval = Math.min(
+    Math.max(1, Math.round(tradesPerWeek)),
+    maxSnapshotInterval
+  );
+
+  // Begrenze Simulationen basierend auf Trade Sample Size
+  // Bei kleiner Sample Size (< 500 Trades) weniger Sims um Überlappung zu vermeiden
+  const maxSimsBasedOnSampleSize = pnls.length < 500
+    ? Math.min(simCount, 500)
+    : simCount;
+
+  const effectiveSimCount = Math.min(
+    maxSimsBasedOnSampleSize,
+    Math.floor(600000 / Math.max(tradesTotal, 1))
+  );
+
   const results = [];
   for (let s = 0; s < effectiveSimCount; s++) {
     let equity = 0, peak = 0, maxDD = 0;
